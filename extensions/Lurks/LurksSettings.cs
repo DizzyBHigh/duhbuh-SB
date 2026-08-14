@@ -25,7 +25,8 @@ public class CPHInline
 
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
-        ui.AddToggleSwitch("Remove Unpresent Lurkers", "Remove lurks after 15 minutes without appearing in Streamer.bot's Twitch Present Viewers list.", "General", "duhbuh_lurks_removeUnpresentLurkers", true);
+        ui.AddToggleSwitch("Remove Unpresent Lurkers", "Automatically end lurks when viewers have been absent from Streamer.bot's Twitch Present Viewers list for the configured timeout.", "General", "duhbuh_lurks_removeUnpresentLurkers", true);
+        ui.AddSlider("Unpresent Lurker Timeout", "Minutes a lurker must remain absent before their lurk is automatically ended. Your Present Viewers update interval affects how quickly this can be detected.", "General", "duhbuh_lurks_unpresentTimeoutMinutes", 1, 60, 5);
         ui.AddToggleSwitch("Unlurk Chatters", "End a lurk automatically after the configured number of chat messages.", "General", "duhbuh_lurks_chattingUnlurks", true);
         ui.AddSlider("Unlurk Chatters Threshold", "Number of chat messages required to end a lurk.", "General", "duhbuh_lurks_chattingUnlurksThreshold", 1, 10, 3);
         ui.AddToggleSwitch("Send Messages As Replies", "Post chat responses as replies instead.", "General", "duhbuh_lurks_postMessagesAsReplies", true);
@@ -65,15 +66,15 @@ public class CPHInline
         var confirm2 = MessageBox.Show("Are you REALLY REALLY sure? This cannot be undone.", extensionName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm2 != MessageBoxResult.Yes) return;
 
-        List<UserVariableValue<DateTime>> starts = GetUsers<DateTime>("duhbuh_lurks_start");
+        List<UserVariableValue<long>> starts = GetUsers<long>("duhbuh_lurks_start");
         for (int i = 0; i < starts.Count; i++) CPH.UnsetTwitchUserVar(starts[i].UserName, "duhbuh_lurks_start", true);
         List<UserVariableValue<long>> counts = GetUsers<long>("duhbuh_lurks_count");
         for (int i = 0; i < counts.Count; i++) CPH.UnsetTwitchUserVar(counts[i].UserName, "duhbuh_lurks_count", true);
         List<UserVariableValue<long>> totals = GetUsers<long>("duhbuh_lurks_totalSeconds");
         for (int i = 0; i < totals.Count; i++) CPH.UnsetTwitchUserVar(totals[i].UserName, "duhbuh_lurks_totalSeconds", true);
         List<UserVariableValue<long>> chat = GetUsers<long>("duhbuh_lurks_chatMessages");
-        for (int i = 0; i < chat.Count; i++) CPH.UnsetTwitchUserVar(chat[i].UserName, "duhbuh_lurks_chatMessages", false);
-        List<UserVariableValue<DateTime>> present = GetUsers<DateTime>("duhbuh_lurks_lastPresent");
+        for (int i = 0; i < chat.Count; i++) CPH.UnsetTwitchUserVar(chat[i].UserName, "duhbuh_lurks_chatMessages", true);
+        List<UserVariableValue<long>> present = GetUsers<long>("duhbuh_lurks_lastPresent");
         for (int i = 0; i < present.Count; i++) CPH.UnsetTwitchUserVar(present[i].UserName, "duhbuh_lurks_lastPresent", true);
 
         CPH.LogInfo("[duhBuh Lurks] All lurk statistics reset.");
