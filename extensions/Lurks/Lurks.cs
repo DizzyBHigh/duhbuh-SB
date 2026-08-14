@@ -129,7 +129,6 @@ public class CPHInline
         List<UserVariableValue<long>> allUsers = GetTwitchUsersLong(CountVar);
         List<UserVariableValue<long>> ranked = new List<UserVariableValue<long>>();
 
-        // Avoid LINQ: Streamer.bot's C# action compiler may not reference System.Linq.
         for (int i = 0; i < allUsers.Count; i++)
         {
             if (allUsers[i].Value <= 0) continue;
@@ -175,13 +174,11 @@ public class CPHInline
         long messages = GetLong(user, ChatMessagesVar) + 1;
         CPH.SetTwitchUserVar(user, ChatMessagesVar, messages, false);
         if (messages >= threshold)
-        {
             return EndLurk();
-        }
+
         return true;
     }
 
-    // Run this action from the Twitch Present Viewers trigger.
     public bool RemoveUnpresentLurkers()
     {
         if (!GetGlobalBool("duhbuh_lurks_removeUnpresentLurkers", true)) return true;
@@ -348,6 +345,7 @@ public class CPHInline
     private void Send(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
-        CPH.SendMessage(message, true, true);
+        bool reply = GetGlobalBool("duhbuh_lurks_postMessagesAsReplies", true);
+        CPH.SendMessage(message, true, reply);
     }
 }
