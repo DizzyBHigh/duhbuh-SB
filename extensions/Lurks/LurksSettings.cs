@@ -12,7 +12,17 @@ public class CPHInline
 
     public bool Execute()
     {
-        var ui = new DuhBuhUI(CPH, extensionName, extensionVersion);
+        var ui = new DuhBuhUI(
+            extensionName,
+            extensionVersion,
+            (key, persisted) => CPH.GetGlobalVar<bool?>(key, persisted),
+            (key, persisted) => CPH.GetGlobalVar<int?>(key, persisted),
+            (key, persisted) => CPH.GetGlobalVar<string>(key, persisted),
+            (key, persisted) => CPH.GetGlobalVar<object>(key, persisted),
+            (key, value, persisted) => CPH.SetGlobalVar(key, value, persisted),
+            message => CPH.LogInfo(message)
+        );
+
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
         ui.AddToggleSwitch("Remove Unpresent Lurkers", "Remove lurks after 15 minutes without appearing in Streamer.bot's Twitch Present Viewers list.", "General", "duhbuh_lurks_removeUnpresentLurkers", true);
@@ -28,10 +38,10 @@ public class CPHInline
         ui.AddTextbox("Lurk End (hasn't lurked)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkEndHasntLurked", "@%user%, you haven't been lurking.", false);
         ui.AddTextbox("Lurk Check", "Variables: %lurkerCount%", "Chat Responses", "duhbuh_lurks_messagesLurkCheck", "There are currently %lurkerCount% lurkers:", false);
         ui.AddTextbox("Lurk Check (No one lurking)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkCheckNoOneLurking", "@%user%, no one's currently lurking.", false);
-        ui.AddTextbox("Lurk Stats", "Variables: %user%, %lurkCount%, %totalLurkTime%, %averageLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total of %totalLurkTime%. Your average lurking time is %averageLurkTime%.", false);
+        ui.AddTextbox("Lurk Stats", "Variables: %user%, %lurkCount%, %totalLurkTime%, %averageLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total time of %totalLurkTime%. Your average lurking time is %averageLurkTime%.", false);
         ui.AddTextbox("Lurk Stats (hasn't lurked yet)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkStatsHasntLurkedYet", "@%user%, you haven't ever lurked yet.", false);
         ui.AddTextbox("Leaderboard Infix", "Used between lurk count and total time in leaderboard output.", "Chat Responses", "duhbuh_lurks_messagesLeaderboardInfix", "times for a total of", false);
-        ui.AddTextbox("Leaderboard Own Rank", "Variables: %user%, %rank%, %lurkCount%, %totalLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLeaderboardOwnRank", "@%user%, your own rank is #%rank% with %lurkCount% lurks and a total lurk time of %totalLurkTime%", false);
+        ui.AddTextbox("Leaderboard Own Rank", "Variables: %user%, %rank%, %lurkCount%, %totalLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLeaderboardOwnRank", "@%user%, your own rank is #%rank% with %lurkCount% lurks and a total of %totalLurkTime%", false);
 
         ui.AddTitle("Translations", "Translations");
         ui.AddTextbox("second/seconds", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationSeconds", "second/seconds", false);
