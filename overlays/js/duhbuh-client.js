@@ -27,12 +27,37 @@
     }, duration);
   }
 
-  // Public bridge: the C# side can later emit a normalized overlay event.
   window.duhBuhOverlay = { notify: showNotification };
 
-  // Development/test hook. Remove or disable for production if desired.
+  // Streamer.bot's official client automatically subscribes when .on() is used.
+  // The overlay only listens for our namespaced Custom.Event payloads.
+  const client = new StreamerbotClient({
+    host: '127.0.0.1',
+    port: 8080,
+    endpoint: '/'
+  });
+
+  client.on('Custom.Event', ({ data }) => {
+    if (!data || data.eventName !== 'duhbuh.overlay') return;
+    const args = data.args || {};
+    showNotification({
+      title: args.title || 'duhBuh',
+      message: args.message || '',
+      meta: args.meta || '',
+      duration: args.duration || 5000
+    });
+  });
+
+  console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
+
+  // Development/test hook.
   const params = new URLSearchParams(location.search);
   if (params.get('test') === '1') {
-    showNotification({ title: 'duhBuh', message: 'Overlay connected', meta: 'Test notification', duration: 3000 });
+    showNotification({
+      title: 'duhBuh',
+      message: 'Overlay connected',
+      meta: 'Browser source test',
+      duration: 3000
+    });
   }
 })();
