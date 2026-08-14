@@ -37,16 +37,22 @@
     endpoint: '/'
   });
 
-  client.on('Custom.Event', ({ data }) => {
-    if (!data || data.eventName !== 'duhbuh.overlay') return;
-    const args = data.args || {};
+  client.on('General.Custom', ({ event, data }) => {
+    console.log('[duhBuh Overlay] General.Custom received:', event, data);
+
+    const payload = data?.data || data;
+
+    if (!payload || payload.eventName !== 'duhbuh.overlay') return;
+
+    const args = payload.args || {};
+
     showNotification({
       title: args.title || 'duhBuh',
       message: args.message || '',
       meta: args.meta || '',
       duration: args.duration || 5000
     });
-  });
+  });;
 
   console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
 
