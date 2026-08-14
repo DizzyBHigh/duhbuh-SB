@@ -134,7 +134,7 @@ public class CPHInline
         if (threshold < 1) threshold = 1;
         if (threshold > 10) threshold = 10;
         long messages = GetLong(user, ChatMessagesVar) + 1;
-        CPH.SetTwitchUserVar(user, ChatMessagesVar, messages, false);
+        CPH.SetTwitchUserVar(user, ChatMessagesVar, messages, true);
         if (messages >= threshold) return EndLurk();
         return true;
     }
@@ -144,6 +144,10 @@ public class CPHInline
         if (!GetGlobalBool("duhbuh_lurks_removeUnpresentLurkers", true)) return true;
         if (!CPH.TryGetArg("users", out List<Dictionary<string, object>> users)) return false;
         long now = UnixSeconds(DateTime.UtcNow);
+        int timeoutMinutes = GetGlobalInt("duhbuh_lurks_unpresentTimeoutMinutes", 5);
+        if (timeoutMinutes < 1) timeoutMinutes = 1;
+        if (timeoutMinutes > 60) timeoutMinutes = 60;
+        long timeoutSeconds = (long)timeoutMinutes * 60;
         List<UserVariableValue<long>> active = GetActiveLurkUsers();
         for (int i = 0; i < active.Count; i++)
         {
@@ -156,7 +160,7 @@ public class CPHInline
                 if (users[j].TryGetValue("userName", out name) && name != null && string.Equals(name.ToString(), username, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
             }
             if (present) CPH.SetTwitchUserVar(username, LastPresentVar, now, true);
-            else if (now - GetLongWithFallback(username, LastPresentVar, active[i].Value) >= 900) ClearLurk(username);
+            else if (now - GetLongWithFallback(username, LastPresentVar, active[i].Value) >= timeoutSeconds) ClearLurk(username);
         }
         return true;
     }
