@@ -22,7 +22,7 @@ public class CPHInline
         {
             case "start": return StartLurk();
             case "end": return EndLurk();
-            case "check": return CheckLurks();
+            case "check": return CheckLurkers();
             case "stats": return Stats();
             case "leaderboard": return Leaderboard();
             case "chatunlurk": return ChatUnlurk();
@@ -32,7 +32,7 @@ public class CPHInline
         }
     }
 
-    private bool StartLurk()
+    public bool StartLurk()
     {
         if (!TryUser(out string user, out string display)) return false;
         DateTime? existing = GetStart(user);
@@ -52,7 +52,7 @@ public class CPHInline
         return true;
     }
 
-    private bool EndLurk()
+    public bool EndLurk()
     {
         if (!TryUser(out string user, out string display)) return false;
         DateTime? start = GetStart(user);
@@ -77,7 +77,7 @@ public class CPHInline
         return true;
     }
 
-    private bool CheckLurks()
+    public bool CheckLurkers()
     {
         List<UserVariableValue<DateTime>> users = GetActiveLurkUsers();
         int count = users.Count;
@@ -99,7 +99,7 @@ public class CPHInline
         return true;
     }
 
-    private bool Stats()
+    public bool Stats()
     {
         if (!TryUser(out string user, out string display)) return false;
         long count = GetLong(user, CountVar);
@@ -120,7 +120,7 @@ public class CPHInline
         return true;
     }
 
-    private bool Leaderboard()
+    public bool Leaderboard()
     {
         int amount = GetGlobalInt("duhbuh_lurks_leaderboardRankAmount", 5);
         if (amount < 1) amount = 1;
@@ -161,7 +161,7 @@ public class CPHInline
         return true;
     }
 
-    private bool ChatUnlurk()
+    public bool ChatUnlurk()
     {
         if (!GetGlobalBool("duhbuh_lurks_chattingUnlurks", true)) return true;
         if (!TryUser(out string user, out string display)) return false;
