@@ -1,53 +1,42 @@
 # duhBuh roadmap
 
-## Phase 1 — foundation
+The roadmap is intentionally feature-driven rather than a checklist of another project's catalogue. Standard streamer functionality is fair game, and new ideas should be designed independently.
+
+## Foundation
 
 - [x] Repository initialized
-- [ ] Settings/UI API
+- [ ] Shared settings/UI helpers
 - [ ] Settings persistence conventions
 - [ ] Common logging helpers
-- [ ] Twitch abstraction
-- [ ] YouTube abstraction
+- [ ] Twitch helpers
+- [ ] YouTube helpers where useful
 - [ ] HTTP/retry/cache helpers
-- [ ] Import/package conventions
+- [ ] Independent extension import/package conventions
+- [ ] Release workflow for individual extensions
 
-## Phase 2 — core extensions
+## Initial duhBuh extensions
 
-- [ ] Lurks
-- [ ] Watchtime
-- [ ] Time Trigger
-- [ ] Dynamic Timers
-- [ ] Command Check
-- [ ] Temporary VIP
+These are the first four extensions to prioritize:
 
-## Phase 3 — integrations
+- [ ] **Lurks** — viewer lurk tracking and configurable chat responses
+- [ ] **Shoutouts** — streamer shoutout automation, with optional AI/provider support
+- [ ] **Mod Tools** — practical moderation utilities
+- [ ] **Watchtime** — viewer watch-time tracking and statistics
 
-- [ ] Mod Tools
-- [ ] Spotify
-- [ ] Giphy
-- [ ] Steam
-- [ ] Bluesky
-- [ ] X
+Each will be independently installable. Users will not need to install the rest of duhBuh to use one extension.
 
-## Phase 4 — AI
+## Later ideas
 
-- [ ] Better Shoutouts
-- [ ] Chat Lookup
-- [ ] Provider abstraction
-- [ ] Optional local model support
+Possible future work includes viewer/community tools, chat utilities, timers, OBS/browser widgets, Twitch/YouTube integrations, games, and other streamer automation. These are intentionally not commitments to reproduce another project's catalogue.
 
-## Phase 5 — widgets and games
+## Distribution and monetisation
 
-- [ ] Goalbar
-- [ ] Subathon
-- [ ] Social Rotator
-- [ ] Vertical Chat
-- [ ] Giveaway
-- [ ] Slot Machine
-- [ ] Throne Holder
-- [ ] Stream Receipt
-- [ ] Event List
+- Each extension should have its own Streamer.bot import code/package.
+- Shared libraries should not force unrelated extensions to be installed.
+- Free extensions and optional paid extensions should be able to coexist.
+- Paid features should be packaged and documented independently.
+- Migration helpers may exist where useful, but migration compatibility is not a marketing feature.
 
 ## Quality bar
 
-Every extension should have a clear README, settings documentation, safe defaults, useful logging, and a repeatable import/release path.
+Every extension should have clear documentation, safe defaults, useful logging, an independent install path, and a repeatable release process.
