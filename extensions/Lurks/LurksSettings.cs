@@ -1,9 +1,8 @@
-// Paste this action into Streamer.bot after adding DuhBuhUI.cs to the same code action,
-// or use the combined source/package supplied by duhBuh releases.
-//
+// Paste this action into Streamer.bot after adding DuhBuhUI.cs to the same code action.
 // The action only defines settings; runtime behavior is in Lurks.cs.
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 
 public class CPHInline
@@ -18,8 +17,8 @@ public class CPHInline
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
         ui.AddToggleSwitch("Remove Unpresent Lurkers", "Remove lurks after 15 minutes without appearing in Streamer.bot's Twitch Present Viewers list.", "General", "duhbuh_lurks_removeUnpresentLurkers", true);
         ui.AddToggleSwitch("Unlurk Chatters", "End a lurk automatically after the configured number of chat messages.", "General", "duhbuh_lurks_chattingUnlurks", true);
-        ui.AddSlider("Unlurk Chatters Threshold", "Number of chat messages required to end a lurk.", "General", "duhbuh_lurks_chattingUnlurksThreshold", 1, 10, 1);
-        ui.AddToggleSwitch("Send Messages As Replies", "Reserved for the reply-aware message implementation.", "General", "duhbuh_lurks_postMessagesAsReplies", true);
+        ui.AddSlider("Unlurk Chatters Threshold", "Number of chat messages required to end a lurk.", "General", "duhbuh_lurks_chattingUnlurksThreshold", 1, 10, 3);
+        ui.AddToggleSwitch("Send Messages As Replies", "Post chat responses as replies instead.", "General", "duhbuh_lurks_postMessagesAsReplies", true);
         ui.AddSlider("Leaderboard Ranks", "Number of ranks shown by the leaderboard action.", "General", "duhbuh_lurks_leaderboardRankAmount", 3, 20, 5);
 
         ui.AddTitle("Chat Responses", "Chat Responses");
@@ -31,12 +30,16 @@ public class CPHInline
         ui.AddTextbox("Lurk Check (No one lurking)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkCheckNoOneLurking", "@%user%, no one's currently lurking.", false);
         ui.AddTextbox("Lurk Stats", "Variables: %user%, %lurkCount%, %totalLurkTime%, %averageLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total of %totalLurkTime%. Your average lurking time is %averageLurkTime%.", false);
         ui.AddTextbox("Lurk Stats (hasn't lurked yet)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkStatsHasntLurkedYet", "@%user%, you haven't ever lurked yet.", false);
+        ui.AddTextbox("Leaderboard Infix", "Used between lurk count and total time in leaderboard output.", "Chat Responses", "duhbuh_lurks_messagesLeaderboardInfix", "times for a total of", false);
+        ui.AddTextbox("Leaderboard Own Rank", "Variables: %user%, %rank%, %lurkCount%, %totalLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLeaderboardOwnRank", "@%user%, your own rank is #%rank% with %lurkCount% lurks and a total lurk time of %totalLurkTime%", false);
 
         ui.AddTitle("Translations", "Translations");
         ui.AddTextbox("second/seconds", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationSeconds", "second/seconds", false);
         ui.AddTextbox("minute/minutes", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationMinutes", "minute/minutes", false);
         ui.AddTextbox("hour/hours", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationHours", "hour/hours", false);
         ui.AddTextbox("day/days", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationDays", "day/days", false);
+        ui.AddTextbox("for", "Translation for 'for'.", "Translations", "duhbuh_lurks_translationFor", "for", false);
+        ui.AddTextbox("and", "Translation for 'and'.", "Translations", "duhbuh_lurks_translationAnd", "and", false);
 
         ui.AddTitle("Advanced", "Advanced");
         ui.AddClickableButton("Reset All Lurk Times", "Permanently removes all stored lurk start times, counts and totals.", "Reset", "", "Advanced", ResetLurks);
@@ -49,11 +52,27 @@ public class CPHInline
     {
         var confirm = MessageBox.Show("Reset all duhBuh Lurks statistics? This cannot be undone.", extensionName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
-        CPH.UnsetAllUsersVar("duhbuh_lurks_start", true);
-        CPH.UnsetAllUsersVar("duhbuh_lurks_count", true);
-        CPH.UnsetAllUsersVar("duhbuh_lurks_totalSeconds", true);
-        CPH.UnsetAllUsersVar("duhbuh_lurks_chatMessages", false);
+        var confirm2 = MessageBox.Show("Are you REALLY REALLY sure? This cannot be undone.", extensionName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm2 != MessageBoxResult.Yes) return;
+
+        List<UserVariableValue<DateTime>> starts = GetUsers<DateTime>("duhbuh_lurks_start");
+        for (int i = 0; i < starts.Count; i++) CPH.UnsetTwitchUserVar(starts[i].UserName, "duhbuh_lurks_start", true);
+        List<UserVariableValue<long>> counts = GetUsers<long>("duhbuh_lurks_count");
+        for (int i = 0; i < counts.Count; i++) CPH.UnsetTwitchUserVar(counts[i].UserName, "duhbuh_lurks_count", true);
+        List<UserVariableValue<long>> totals = GetUsers<long>("duhbuh_lurks_totalSeconds");
+        for (int i = 0; i < totals.Count; i++) CPH.UnsetTwitchUserVar(totals[i].UserName, "duhbuh_lurks_totalSeconds", true);
+        List<UserVariableValue<long>> chat = GetUsers<long>("duhbuh_lurks_chatMessages");
+        for (int i = 0; i < chat.Count; i++) CPH.UnsetTwitchUserVar(chat[i].UserName, "duhbuh_lurks_chatMessages", false);
+        List<UserVariableValue<DateTime>> present = GetUsers<DateTime>("duhbuh_lurks_lastPresent");
+        for (int i = 0; i < present.Count; i++) CPH.UnsetTwitchUserVar(present[i].UserName, "duhbuh_lurks_lastPresent", true);
+
         CPH.LogInfo("[duhBuh Lurks] All lurk statistics reset.");
         MessageBox.Show("All lurk statistics have been reset.", extensionName, MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private List<UserVariableValue<T>> GetUsers<T>(string key)
+    {
+        try { return CPH.GetTwitchUsersVar<T>(key, true); }
+        catch { return new List<UserVariableValue<T>>(); }
     }
 }
