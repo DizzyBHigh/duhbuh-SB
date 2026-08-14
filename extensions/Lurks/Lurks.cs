@@ -149,6 +149,7 @@ public class CPHInline
         if (timeoutMinutes > 60) timeoutMinutes = 60;
         long timeoutSeconds = (long)timeoutMinutes * 60;
         List<UserVariableValue<long>> active = GetActiveLurkUsers();
+        int removed = 0;
         for (int i = 0; i < active.Count; i++)
         {
             string username = active[i].UserName;
@@ -159,9 +160,18 @@ public class CPHInline
                 if (users[j].TryGetValue("userLogin", out login) && login != null && string.Equals(login.ToString(), username, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
                 if (users[j].TryGetValue("userName", out name) && name != null && string.Equals(name.ToString(), username, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
             }
-            if (present) CPH.SetTwitchUserVar(username, LastPresentVar, now, true);
-            else if (now - GetLongWithFallback(username, LastPresentVar, active[i].Value) >= timeoutSeconds) ClearLurk(username);
+            if (present)
+                CPH.SetTwitchUserVar(username, LastPresentVar, now, true);
+            else if (now - GetLongWithFallback(username, LastPresentVar, active[i].Value) >= timeoutSeconds)
+            {
+                long absentFor = now - GetLongWithFallback(username, LastPresentVar, active[i].Value);
+                CPH.LogInfo("[duhBuh Lurks] Removed unpresent lurker: " + username + " after " + (absentFor / 60) + " minutes absent (timeout " + timeoutMinutes + " minutes).");
+                ClearLurk(username);
+                removed++;
+            }
         }
+        if (removed > 0)
+            CPH.LogInfo("[duhBuh Lurks] Present Viewers check removed " + removed + " unpresent lurker(s).");
         return true;
     }
 
