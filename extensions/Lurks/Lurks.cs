@@ -41,7 +41,10 @@ public class CPHInline
         CPH.SetTwitchUserVar(user, StartVar, now, true);
         CPH.SetTwitchUserVar(user, LastPresentVar, now, true);
         CPH.UnsetTwitchUserVar(user, ChatMessagesVar, true);
-        Send(Template("duhbuh_lurks_messagesLurkStart", "@%user% is now lurking!", display, null, CountActiveLurkers()));
+
+        string message = Template("duhbuh_lurks_messagesLurkStart", "@%user% is now lurking!", display, null, CountActiveLurkers());
+        Send(message);
+        BroadcastOverlay("Lurk", display + " is now lurking!", "", 5000);
         return true;
     }
 
@@ -64,10 +67,12 @@ public class CPHInline
         CPH.SetTwitchUserVar(user, TotalVar, total, true);
         ClearLurk(user);
 
+        string lurkTime = FormatDuration(TimeSpan.FromSeconds(elapsed));
         string message = Template("duhbuh_lurks_messagesLurkEnd", "@%user%, welcome back! Your lurk has lasted for %lurkTime%.", display);
-        message = message.Replace("%lurkTime%", FormatDuration(TimeSpan.FromSeconds(elapsed)));
+        message = message.Replace("%lurkTime%", lurkTime);
         message = message.Replace("%lurkerCount%", CountActiveLurkers().ToString());
         Send(message);
+        BroadcastOverlay("Welcome back", display + " has returned!", "Lurk lasted for " + lurkTime, 5000);
         return true;
     }
 
@@ -257,6 +262,18 @@ public class CPHInline
 
     private long UnixSeconds(DateTime utc) { return (long)(utc - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds; }
     private DateTime FromUnixSeconds(long value) { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(value); }
+
+    private void BroadcastOverlay(string title, string message, string meta, int duration)
+    {
+        string json = "{\"timeStamp\":\"" + DateTime.UtcNow.ToString("o") + "\",\"event\":{\"source\":\"Custom\",\"type\":\"Event\"},\"data\":{\"eventName\":\"duhbuh.overlay\",\"useArgs\":true,\"args\":{\"title\":\"" + JsonEscape(title) + "\",\"message\":\"" + JsonEscape(message) + "\",\"meta\":\"" + JsonEscape(meta) + "\",\"duration\":" + duration + "}}}";
+        CPH.WebsocketBroadcastJson(json);
+    }
+
+    private string JsonEscape(string value)
+    {
+        if (value == null) return "";
+        return value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
+    }
 
     private void Send(string message)
     {
