@@ -12,12 +12,7 @@ public class CPHInline
     public bool Execute()
     {
         CPH.TryGetArg("duhbuhLurksAction", out string action);
-        if (string.IsNullOrWhiteSpace(action))
-        {
-            CPH.LogWarn("[duhBuh Lurks] Missing 'duhbuhLurksAction'. Use start, end, check, stats, leaderboard, or chatUnlurk.");
-            return false;
-        }
-
+        if (string.IsNullOrWhiteSpace(action)) return false;
         switch (action.Trim().ToLowerInvariant())
         {
             case "start": return StartLurk();
@@ -26,52 +21,51 @@ public class CPHInline
             case "stats": return Stats();
             case "leaderboard": return Leaderboard();
             case "chatunlurk": return ChatUnlurk();
-            default:
-                CPH.LogWarn("[duhBuh Lurks] Unknown action: " + action);
-                return false;
+            case "removeunpresentlurkers": return RemoveUnpresentLurkers();
+            default: return false;
         }
     }
 
     public bool StartLurk()
     {
         if (!TryUser(out string user, out string display)) return false;
-        DateTime? existing = GetStart(user);
-        if (existing.HasValue)
+        long existing = GetLong(user, StartVar);
+        if (existing > 0)
         {
-            string startText = existing.Value.ToLocalTime().ToString(GetGlobalBool("duhbuh_lurks_24hFormat", true) ? "HH:mm" : "h:mm tt");
+            string startText = FromUnixSeconds(existing).ToLocalTime().ToString(GetGlobalBool("duhbuh_lurks_24hFormat", true) ? "HH:mm" : "h:mm tt");
             Send(Template("duhbuh_lurks_messagesAlreadyLurking", "@%user%, you've already entered the lurk at %lurkStartTime%!", display, startText));
             return true;
         }
 
-        DateTime now = DateTime.UtcNow;
+        long now = UnixSeconds(DateTime.UtcNow);
         CPH.SetTwitchUserVar(user, StartVar, now, true);
         CPH.SetTwitchUserVar(user, LastPresentVar, now, true);
         CPH.UnsetTwitchUserVar(user, ChatMessagesVar, true);
-        int lurkerCount = CountActiveLurkers();
-        Send(Template("duhbuh_lurks_messagesLurkStart", "@%user% is now lurking!", display, null, lurkerCount));
+        Send(Template("duhbuh_lurks_messagesLurkStart", "@%user% is now lurking!", display, null, CountActiveLurkers()));
         return true;
     }
 
     public bool EndLurk()
     {
         if (!TryUser(out string user, out string display)) return false;
-        DateTime? start = GetStart(user);
-        if (!start.HasValue)
+        long start = GetLong(user, StartVar);
+        if (start <= 0)
         {
             Send(Template("duhbuh_lurks_messagesLurkEndHasntLurked", "@%user%, you haven't been lurking.", display));
             return true;
         }
 
-        TimeSpan duration = DateTime.UtcNow - start.Value;
-        if (duration.TotalSeconds < 0) duration = TimeSpan.Zero;
+        long now = UnixSeconds(DateTime.UtcNow);
+        long elapsed = now - start;
+        if (elapsed < 0) elapsed = 0;
         long count = GetLong(user, CountVar) + 1;
-        long total = GetLong(user, TotalVar) + (long)Math.Round(duration.TotalSeconds);
+        long total = GetLong(user, TotalVar) + elapsed;
         CPH.SetTwitchUserVar(user, CountVar, count, true);
         CPH.SetTwitchUserVar(user, TotalVar, total, true);
         ClearLurk(user);
 
         string message = Template("duhbuh_lurks_messagesLurkEnd", "@%user%, welcome back! Your lurk has lasted for %lurkTime%.", display);
-        message = message.Replace("%lurkTime%", FormatDuration(duration));
+        message = message.Replace("%lurkTime%", FormatDuration(TimeSpan.FromSeconds(elapsed)));
         message = message.Replace("%lurkerCount%", CountActiveLurkers().ToString());
         Send(message);
         return true;
@@ -79,22 +73,15 @@ public class CPHInline
 
     public bool CheckLurkers()
     {
-        List<UserVariableValue<DateTime>> users = GetActiveLurkUsers();
-        int count = users.Count;
-        if (count == 0)
+        List<UserVariableValue<long>> users = GetActiveLurkUsers();
+        if (users.Count == 0)
         {
             Send(GetGlobalString("duhbuh_lurks_messagesLurkCheckNoOneLurking", "@%user%, no one's currently lurking.").Replace("%user%", CurrentDisplayName()));
             return true;
         }
-
         List<string> names = new List<string>();
-        for (int i = 0; i < users.Count && names.Count < 50; i++)
-        {
-            if (users[i].Value != default(DateTime)) names.Add(users[i].UserName);
-        }
-
-        string message = GetGlobalString("duhbuh_lurks_messagesLurkCheck", "There are currently %lurkerCount% lurkers:")
-            .Replace("%lurkerCount%", count.ToString());
+        for (int i = 0; i < users.Count && names.Count < 50; i++) names.Add(users[i].UserName);
+        string message = GetGlobalString("duhbuh_lurks_messagesLurkCheck", "There are currently %lurkerCount% lurkers:").Replace("%lurkerCount%", users.Count.ToString());
         Send(message + " " + string.Join(", ", names.ToArray()));
         return true;
     }
@@ -109,13 +96,9 @@ public class CPHInline
             Send(Template("duhbuh_lurks_messagesLurkStatsHasntLurkedYet", "@%user%, you haven't ever lurked yet.", display));
             return true;
         }
-
         TimeSpan average = TimeSpan.FromSeconds((double)total / count);
         string message = GetGlobalString("duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total of %totalLurkTime%. Your average lurking time is %averageLurkTime%.");
-        message = message.Replace("%user%", display)
-            .Replace("%lurkCount%", count.ToString())
-            .Replace("%totalLurkTime%", FormatDuration(TimeSpan.FromSeconds(total)))
-            .Replace("%averageLurkTime%", FormatDuration(average));
+        message = message.Replace("%user%", display).Replace("%lurkCount%", count.ToString()).Replace("%totalLurkTime%", FormatDuration(TimeSpan.FromSeconds(total))).Replace("%averageLurkTime%", FormatDuration(average));
         Send(message);
         return true;
     }
@@ -125,38 +108,19 @@ public class CPHInline
         int amount = GetGlobalInt("duhbuh_lurks_leaderboardRankAmount", 5);
         if (amount < 1) amount = 1;
         if (amount > 20) amount = 20;
-
         List<UserVariableValue<long>> allUsers = GetTwitchUsersLong(CountVar);
         List<UserVariableValue<long>> ranked = new List<UserVariableValue<long>>();
-
         for (int i = 0; i < allUsers.Count; i++)
         {
             if (allUsers[i].Value <= 0) continue;
             int insertAt = ranked.Count;
-            for (int j = 0; j < ranked.Count; j++)
-            {
-                if (allUsers[i].Value > ranked[j].Value)
-                {
-                    insertAt = j;
-                    break;
-                }
-            }
+            for (int j = 0; j < ranked.Count; j++) if (allUsers[i].Value > ranked[j].Value) { insertAt = j; break; }
             ranked.Insert(insertAt, allUsers[i]);
             if (ranked.Count > amount) ranked.RemoveAt(ranked.Count - 1);
         }
-
-        if (ranked.Count == 0)
-        {
-            Send("No lurk statistics yet.");
-            return true;
-        }
-
+        if (ranked.Count == 0) { Send("No lurk statistics yet."); return true; }
         List<string> parts = new List<string>();
-        for (int i = 0; i < ranked.Count; i++)
-        {
-            long total = GetLong(ranked[i].UserName, TotalVar);
-            parts.Add("#" + (i + 1) + " " + ranked[i].UserName + " (" + ranked[i].Value + " lurks / " + FormatDuration(TimeSpan.FromSeconds(total)) + ")");
-        }
+        for (int i = 0; i < ranked.Count; i++) parts.Add("#" + (i + 1) + " " + ranked[i].UserName + " (" + ranked[i].Value + " lurks / " + FormatDuration(TimeSpan.FromSeconds(GetLong(ranked[i].UserName, TotalVar))) + ")");
         Send(string.Join(" | ", parts.ToArray()));
         return true;
     }
@@ -165,17 +129,13 @@ public class CPHInline
     {
         if (!GetGlobalBool("duhbuh_lurks_chattingUnlurks", true)) return true;
         if (!TryUser(out string user, out string display)) return false;
-        if (!GetStart(user).HasValue) return true;
-
+        if (GetLong(user, StartVar) <= 0) return true;
         int threshold = GetGlobalInt("duhbuh_lurks_chattingUnlurksThreshold", 1);
         if (threshold < 1) threshold = 1;
         if (threshold > 10) threshold = 10;
-
         long messages = GetLong(user, ChatMessagesVar) + 1;
         CPH.SetTwitchUserVar(user, ChatMessagesVar, messages, false);
-        if (messages >= threshold)
-            return EndLurk();
-
+        if (messages >= threshold) return EndLurk();
         return true;
     }
 
@@ -183,41 +143,20 @@ public class CPHInline
     {
         if (!GetGlobalBool("duhbuh_lurks_removeUnpresentLurkers", true)) return true;
         if (!CPH.TryGetArg("users", out List<Dictionary<string, object>> users)) return false;
-
-        DateTime now = DateTime.UtcNow;
-        List<UserVariableValue<DateTime>> active = GetActiveLurkUsers();
+        long now = UnixSeconds(DateTime.UtcNow);
+        List<UserVariableValue<long>> active = GetActiveLurkUsers();
         for (int i = 0; i < active.Count; i++)
         {
             string username = active[i].UserName;
             bool present = false;
             for (int j = 0; j < users.Count; j++)
             {
-                object login;
-                object name;
-                if (users[j].TryGetValue("userLogin", out login) && login != null && string.Equals(login.ToString(), username, StringComparison.OrdinalIgnoreCase))
-                {
-                    present = true;
-                    break;
-                }
-                if (users[j].TryGetValue("userName", out name) && name != null && string.Equals(name.ToString(), username, StringComparison.OrdinalIgnoreCase))
-                {
-                    present = true;
-                    break;
-                }
+                object login, name;
+                if (users[j].TryGetValue("userLogin", out login) && login != null && string.Equals(login.ToString(), username, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
+                if (users[j].TryGetValue("userName", out name) && name != null && string.Equals(name.ToString(), username, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
             }
-
-            if (present)
-            {
-                CPH.SetTwitchUserVar(username, LastPresentVar, now, true);
-                continue;
-            }
-
-            DateTime lastPresent = GetDateTime(username, LastPresentVar, active[i].Value);
-            if (now - lastPresent >= TimeSpan.FromMinutes(15))
-            {
-                ClearLurk(username);
-                CPH.LogInfo("[duhBuh Lurks] Removed absent lurk: " + username);
-            }
+            if (present) CPH.SetTwitchUserVar(username, LastPresentVar, now, true);
+            else if (now - GetLongWithFallback(username, LastPresentVar, active[i].Value) >= 900) ClearLurk(username);
         }
         return true;
     }
@@ -236,12 +175,7 @@ public class CPHInline
         if (string.IsNullOrWhiteSpace(user)) user = fallback;
         CPH.TryGetArg("displayName", out display);
         if (string.IsNullOrWhiteSpace(display)) display = user;
-        if (string.IsNullOrWhiteSpace(user))
-        {
-            CPH.LogWarn("[duhBuh Lurks] No Twitch userName/user argument was supplied.");
-            return false;
-        }
-        return true;
+        return !string.IsNullOrWhiteSpace(user);
     }
 
     private string CurrentDisplayName()
@@ -250,82 +184,48 @@ public class CPHInline
         return string.IsNullOrWhiteSpace(display) ? "you" : display;
     }
 
-    private DateTime? GetStart(string user)
+    private long GetLong(string user, string key)
     {
-        try { return CPH.GetTwitchUserVar<DateTime?>(user, StartVar, true); }
-        catch { return null; }
+        try { return CPH.GetTwitchUserVar<long?>(user, key, true) ?? 0; } catch { return 0; }
     }
 
-    private DateTime GetDateTime(string user, string key, DateTime fallback)
+    private long GetLongWithFallback(string user, string key, long fallback)
+    {
+        long value = GetLong(user, key);
+        return value > 0 ? value : fallback;
+    }
+
+    private List<UserVariableValue<long>> GetActiveLurkUsers()
     {
         try
         {
-            DateTime? value = CPH.GetTwitchUserVar<DateTime?>(user, key, true);
-            return value.HasValue ? value.Value : fallback;
+            List<UserVariableValue<long>> source = CPH.GetTwitchUsersVar<long>(StartVar, true);
+            List<UserVariableValue<long>> result = new List<UserVariableValue<long>>();
+            for (int i = 0; i < source.Count; i++) if (source[i].Value > 0) result.Add(source[i]);
+            return result;
         }
-        catch { return fallback; }
-    }
-
-    private long GetLong(string user, string key)
-    {
-        try { return CPH.GetTwitchUserVar<long?>(user, key, true) ?? 0; }
-        catch { return 0; }
-    }
-
-    private List<UserVariableValue<DateTime>> GetActiveLurkUsers()
-    {
-        List<UserVariableValue<DateTime>> source;
-        try { source = CPH.GetTwitchUsersVar<DateTime>(StartVar, true); }
-        catch { return new List<UserVariableValue<DateTime>>(); }
-
-        List<UserVariableValue<DateTime>> result = new List<UserVariableValue<DateTime>>();
-        for (int i = 0; i < source.Count; i++)
-        {
-            if (source[i].Value != default(DateTime)) result.Add(source[i]);
-        }
-        return result;
+        catch { return new List<UserVariableValue<long>>(); }
     }
 
     private List<UserVariableValue<long>> GetTwitchUsersLong(string key)
     {
-        try { return CPH.GetTwitchUsersVar<long>(key, true); }
-        catch { return new List<UserVariableValue<long>>(); }
+        try { return CPH.GetTwitchUsersVar<long>(key, true); } catch { return new List<UserVariableValue<long>>(); }
     }
 
-    private int CountActiveLurkers()
-    {
-        return GetActiveLurkUsers().Count;
-    }
+    private int CountActiveLurkers() { return GetActiveLurkUsers().Count; }
 
-    private bool GetGlobalBool(string key, bool fallback)
-    {
-        try { return CPH.GetGlobalVar<bool?>(key, true) ?? fallback; } catch { return fallback; }
-    }
-
-    private int GetGlobalInt(string key, int fallback)
-    {
-        try { return CPH.GetGlobalVar<int?>(key, true) ?? fallback; } catch { return fallback; }
-    }
-
-    private string GetGlobalString(string key, string fallback)
-    {
-        try { return CPH.GetGlobalVar<string>(key, true) ?? fallback; } catch { return fallback; }
-    }
+    private bool GetGlobalBool(string key, bool fallback) { try { return CPH.GetGlobalVar<bool?>(key, true) ?? fallback; } catch { return fallback; } }
+    private int GetGlobalInt(string key, int fallback) { try { return CPH.GetGlobalVar<int?>(key, true) ?? fallback; } catch { return fallback; } }
+    private string GetGlobalString(string key, string fallback) { try { return CPH.GetGlobalVar<string>(key, true) ?? fallback; } catch { return fallback; } }
 
     private string Template(string key, string fallback, string user, string startTime = null, int lurkerCount = 0)
     {
-        return GetGlobalString(key, fallback)
-            .Replace("%user%", user ?? "")
-            .Replace("%lurkStartTime%", startTime ?? "")
-            .Replace("%lurkerCount%", lurkerCount.ToString());
+        return GetGlobalString(key, fallback).Replace("%user%", user ?? "").Replace("%lurkStartTime%", startTime ?? "").Replace("%lurkerCount%", lurkerCount.ToString());
     }
 
     private string FormatDuration(TimeSpan value)
     {
-        int days = (int)value.TotalDays;
-        int hours = value.Hours;
-        int minutes = value.Minutes;
-        int seconds = value.Seconds;
+        int days = (int)value.TotalDays, hours = value.Hours, minutes = value.Minutes, seconds = value.Seconds;
         List<string> parts = new List<string>();
         if (days > 0) parts.Add(days + " " + Plural("duhbuh_lurks_translationDays", "day/days", days));
         if (hours > 0) parts.Add(hours + " " + Plural("duhbuh_lurks_translationHours", "hour/hours", hours));
@@ -336,16 +236,17 @@ public class CPHInline
 
     private string Plural(string key, string fallback, int value)
     {
-        string text = GetGlobalString(key, fallback);
-        string[] split = text.Split('/');
-        if (split.Length != 2) return text;
+        string[] split = GetGlobalString(key, fallback).Split('/');
+        if (split.Length != 2) return string.Join("/", split);
         return Math.Abs(value) == 1 ? split[0] : split[1];
     }
+
+    private long UnixSeconds(DateTime utc) { return (long)(utc - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds; }
+    private DateTime FromUnixSeconds(long value) { return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(value); }
 
     private void Send(string message)
     {
         if (string.IsNullOrWhiteSpace(message)) return;
-        bool reply = GetGlobalBool("duhbuh_lurks_postMessagesAsReplies", true);
-        CPH.SendMessage(message, true, reply);
+        CPH.SendMessage(message, true, GetGlobalBool("duhbuh_lurks_postMessagesAsReplies", true));
     }
 }
