@@ -1,5 +1,8 @@
 (() => {
   const root = document.getElementById('duhbuh-overlay');
+  const branding = document.getElementById('duhbuh-branding');
+  const brandingDark = document.getElementById('duhbuh-branding-dark');
+  const brandingLight = document.getElementById('duhbuh-branding-light');
   const DEFAULTS = { channel:'default', position:'bottom-center', offsetX:0, offsetY:0, maxVisible:3, maxQueued:20, stackDirection:'auto', spacing:10, duration:5000, enterAnimation:'slide', enterDuration:300, exitAnimation:'fade', exitDuration:300, scale:100, backgroundColor:'#E60F0F12', titleColor:'#FFFFFFFF', messageColor:'#FFFFFFFF', metaColor:'#B3FFFFFF', borderColor:'#00000000', backgroundOpacity:90, borderWidth:0, borderRadius:12, titleSize:24, messageSize:18, metaSize:13 };
   const channels = new Map();
   const recentEvents = new Map();
@@ -41,6 +44,20 @@
       return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${opacity})`;
     }
     return value||'#ffffff';
+  }
+
+  function applyBrandingTheme(theme) {
+    if (!branding || !brandingDark || !brandingLight) return;
+    const requested=String(theme||'system').toLowerCase();
+    let resolved=requested;
+    if (resolved!=='dark' && resolved!=='light') {
+      resolved=window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    branding.className='duhbuh-branding';
+    branding.dataset.theme=resolved;
+    brandingDark.hidden=resolved!=='dark';
+    brandingLight.hidden=resolved!=='light';
+    console.info('[duhBuh Overlay] Branding theme:', resolved, '(requested:', requested + ')');
   }
 
   function getStackDirection(config) {
@@ -105,23 +122,8 @@
     el.style.setProperty('--duhbuh-enter-duration',`${config.enterDuration}ms`);
     el.style.setProperty('--duhbuh-exit-duration',`${config.exitDuration}ms`);
     el.style.setProperty('--duhbuh-background-opacity','1');
-    console.log('[duhBuh Overlay] Applying notification config:', {
-      channel: config.channel,
-      backgroundColor: config.backgroundColor,
-      titleColor: config.titleColor,
-      messageColor: config.messageColor,
-      metaColor: config.metaColor,
-      borderColor: config.borderColor,
-      backgroundOpacity: config.backgroundOpacity,
-      scale: config.scale
-    });
-    console.log('[duhBuh Overlay] Computed notification styles:', {
-      background: el.style.getPropertyValue('--duhbuh-background-color'),
-      title: el.style.getPropertyValue('--duhbuh-title-color'),
-      message: el.style.getPropertyValue('--duhbuh-message-color'),
-      meta: el.style.getPropertyValue('--duhbuh-meta-color'),
-      border: el.style.getPropertyValue('--duhbuh-border-color')
-    });
+    console.log('[duhBuh Overlay] Applying notification config:', {channel:config.channel,backgroundColor:config.backgroundColor,titleColor:config.titleColor,messageColor:config.messageColor,metaColor:config.metaColor,borderColor:config.borderColor,backgroundOpacity:config.backgroundOpacity,scale:config.scale});
+    console.log('[duhBuh Overlay] Computed notification styles:', {background:el.style.getPropertyValue('--duhbuh-background-color'),title:el.style.getPropertyValue('--duhbuh-title-color'),message:el.style.getPropertyValue('--duhbuh-message-color'),meta:el.style.getPropertyValue('--duhbuh-meta-color'),border:el.style.getPropertyValue('--duhbuh-border-color')});
     state.lane.appendChild(el);
     const item={el,event,removing:false}; state.active.push(item); applyLaneLayout(state);
     requestAnimationFrame(()=>el.classList.add('visible'));
@@ -153,6 +155,7 @@
 
   window.duhBuhOverlay={
     notify:showNotification,
+    setTheme:applyBrandingTheme,
     clearChannel(channel){const state=channels.get(channel);if(!state)return;state.queue.length=0;state.active.slice().forEach(item=>hideNotification(state,item));},
     clearAll(){channels.forEach(state=>{state.queue.length=0;state.active.slice().forEach(item=>hideNotification(state,item));});}
   };
@@ -167,5 +170,16 @@
   console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
 
   const params=new URLSearchParams(location.search);
+  const bannerTheme=params.get('theme')||'system';
+  const bannerVisible=params.get('banner')!=='0' && params.get('banner')!=='false';
+  if (branding) branding.style.display=bannerVisible?'block':'none';
+  applyBrandingTheme(bannerTheme);
+  if (bannerTheme==='system' && window.matchMedia) {
+    const media=window.matchMedia('(prefers-color-scheme: light)');
+    const updateTheme=()=>applyBrandingTheme('system');
+    if (media.addEventListener) media.addEventListener('change',updateTheme);
+    else if (media.addListener) media.addListener(updateTheme);
+  }
+
   if(params.get('test')==='1')showNotification({channel:'default',title:'duhBuh',message:'Overlay connected',meta:'Browser source test',duration:3000,config:{position:'top-center'}});
 })();
