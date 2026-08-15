@@ -1,10 +1,10 @@
-// duhBuhUITheme - safe visual styling for the shared settings UI.
-// IMPORTANT: Do not replace TabControl/TabItem templates or modify generated tab content.
-// Streamer.bot's hosted WPF runtime can lose tab content when templates are replaced.
+// duhBuhUITheme - visual styling for the shared settings UI.
+// Keep TabControl/TabItem content untouched.
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 
 public static class DuhBuhUITheme
@@ -15,6 +15,23 @@ public static class DuhBuhUITheme
     {
         if (_initialized) return;
         _initialized = true;
+
+        // DuhBuhUI calls Initialize() before the settings window is shown.
+        // Hook Window initialization so the theme is actually applied to the
+        // window created by the shared UI, rather than merely defining styles.
+        EventManager.RegisterClassHandler(
+            typeof(Window),
+            FrameworkElement.InitializedEvent,
+            new RoutedEventHandler(OnWindowInitialized));
+    }
+
+    private static void OnWindowInitialized(object sender, RoutedEventArgs e)
+    {
+        Window window = sender as Window;
+        if (window == null) return;
+        if (window.Title == null || window.Title.IndexOf("Settings", StringComparison.OrdinalIgnoreCase) < 0) return;
+
+        Apply(window, IsLightWindow(window));
     }
 
     public static void Apply(Window window, bool light)
@@ -38,8 +55,8 @@ public static class DuhBuhUITheme
         r["duhBuhDescriptionText"] = new SolidColorBrush(
             light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        // Only style controls that already exist. Never replace WPF templates and
-        // never modify TabControl/TabItem content.
+        // Style controls as they are loaded. No TabControl/TabItem templates
+        // are replaced, so generated tab content remains safe.
         window.AddHandler(
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnElementLoaded));
@@ -51,6 +68,7 @@ public static class DuhBuhUITheme
         if (element == null) return;
 
         Window window = Window.GetWindow(element);
+        if (window == null) return;
         bool light = IsLightWindow(window);
 
         TextBlock heading = element as TextBlock;
@@ -60,7 +78,8 @@ public static class DuhBuhUITheme
                 light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
             heading.Background = new SolidColorBrush(
                 light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
-            heading.Margin = new Thickness(0, 14, 0, 8);
+            heading.Padding = new Thickness(10, 6, 10, 6);
+            heading.Margin = new Thickness(0, 12, 0, 8);
             heading.HorizontalAlignment = HorizontalAlignment.Stretch;
             return;
         }
@@ -68,14 +87,13 @@ public static class DuhBuhUITheme
         StackPanel panel = element as StackPanel;
         if (panel == null) return;
 
-        // FieldBox() creates the small panels that contain a setting's control and
-        // its description. Give those panels a subtle surface so settings read as
-        // individual cards without reparenting or templating any WPF controls.
+        // FieldBox() creates the small setting groups. Give them a visible
+        // surface and spacing without reparenting any controls.
         if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
         {
             panel.Background = new SolidColorBrush(
-                light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(32, 35, 41));
-            panel.Margin = new Thickness(0, 0, 0, 8);
+                light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(39, 42, 48));
+            panel.Margin = new Thickness(0, 2, 0, 10);
             return;
         }
     }
@@ -107,6 +125,8 @@ public static class DuhBuhUITheme
     private static Style CreateButtonStyle(bool light)
     {
         Color background = light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 110, 180);
+        Color hover = light ? Color.FromRgb(58, 108, 184) : Color.FromRgb(72, 130, 205);
+        Color pressed = light ? Color.FromRgb(35, 72, 132) : Color.FromRgb(45, 88, 145);
         Color border = light ? Color.FromRgb(32, 68, 125) : Color.FromRgb(90, 140, 205);
 
         Style style = new Style(typeof(Button));
@@ -114,10 +134,43 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(Colors.White)));
         style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(border)));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 6, 12, 6)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 7, 14, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+
+        // Rounded WPF button template. This only affects Button, not tabs.
+        ControlTemplate template = new ControlTemplate(typeof(Button));
+        FrameworkElementFactory borderElement = new FrameworkElementFactory(typeof(Border));
+        borderElement.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+        borderElement.SetBinding(Border.BackgroundProperty,
+            new Binding("Background") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        borderElement.SetBinding(Border.BorderBrushProperty,
+            new Binding("BorderBrush") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        borderElement.SetBinding(Border.BorderThicknessProperty,
+            new Binding("BorderThickness") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetBinding(ContentPresenter.ContentProperty,
+            new Binding("Content") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        content.SetBinding(ContentPresenter.ContentTemplateProperty,
+            new Binding("ContentTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        content.SetBinding(ContentPresenter.ForegroundProperty,
+            new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        borderElement.AppendChild(content);
+        template.VisualTree = borderElement;
+        style.Setters.Add(new Setter(Control.TemplateProperty, template));
+
+        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(hover)));
+        style.Triggers.Add(mouseOver);
+
+        Trigger isPressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
+        isPressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(pressed)));
+        style.Triggers.Add(isPressed);
+
         return style;
     }
 
