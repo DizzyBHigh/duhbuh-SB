@@ -38,8 +38,6 @@ public static class DuhBuhUITheme
         r["duhBuhDescriptionText"] = new SolidColorBrush(
             light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        // Style only the already-created field groups. We never replace templates
-        // and we never alter TabControl/TabItem content.
         window.AddHandler(
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnElementLoaded));
@@ -53,16 +51,12 @@ public static class DuhBuhUITheme
         StackPanel panel = element as StackPanel;
         if (panel == null) return;
 
-        // FieldBox() creates small StackPanels containing a label/description and
-        // one or more controls. Category/root panels contain many children and are
-        // intentionally left alone.
         if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
         {
             bool light = IsLightWindow(Window.GetWindow(panel));
             panel.Background = new SolidColorBrush(
                 light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(37, 40, 46));
             panel.Margin = new Thickness(0, 0, 0, 10);
-            panel.Padding = new Thickness(12, 10, 12, 10);
         }
     }
 
