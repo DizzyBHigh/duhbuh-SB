@@ -93,6 +93,7 @@ public static class DuhBuhUITheme
 
         Border currentCard = null;
         StackPanel currentContent = null;
+        bool sawFirstHeading = false;
 
         for (int i = 0; i < original.Count; i++)
         {
@@ -101,37 +102,43 @@ public static class DuhBuhUITheme
 
             if (IsSectionHeading(heading))
             {
+                sawFirstHeading = true;
                 currentContent = new StackPanel();
-                currentCard = new Border
-                {
-                    Background = new SolidColorBrush(light ? Color.FromRgb(252, 253, 255) : Color.FromRgb(39, 42, 48)),
-                    BorderBrush = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74)),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(10),
-                    Padding = new Thickness(14, 8, 14, 10),
-                    Margin = new Thickness(0, 0, 0, 14),
-                    Child = currentContent
-                };
+                currentCard = CreateCard(currentContent, light);
 
                 heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
                 heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
                 heading.Padding = new Thickness(10, 7, 10, 7);
                 heading.Margin = new Thickness(0, 0, 0, 10);
                 heading.HorizontalAlignment = HorizontalAlignment.Stretch;
+
                 currentContent.Children.Add(heading);
                 category.Children.Add(currentCard);
                 continue;
             }
 
-            if (currentContent != null)
-            {
+            // Everything before the first section heading stays outside the cards.
+            // Everything after a heading belongs to the most recent heading until
+            // another heading starts the next card.
+            if (sawFirstHeading && currentContent != null)
                 currentContent.Children.Add(child);
-            }
             else
-            {
                 category.Children.Add(child);
-            }
         }
+    }
+
+    private static Border CreateCard(StackPanel content, bool light)
+    {
+        return new Border
+        {
+            Background = new SolidColorBrush(light ? Color.FromRgb(252, 253, 255) : Color.FromRgb(39, 42, 48)),
+            BorderBrush = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(14, 8, 14, 10),
+            Margin = new Thickness(0, 0, 0, 14),
+            Child = content
+        };
     }
 
     private static bool IsSectionHeading(TextBlock text)
