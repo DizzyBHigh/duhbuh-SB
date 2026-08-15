@@ -12,7 +12,9 @@
     backgroundOpacity: 90, borderWidth: 0, borderRadius: 12,
     titleSize: 24, messageSize: 18, metaSize: 13
   };
+
   const channels = new Map();
+  const recentEvents = new Map();
 
   function normalisePosition(position) {
     const valid = ['top-left','top-center','top-right','middle-left','center','middle-right','bottom-left','bottom-center','bottom-right'];
@@ -41,6 +43,21 @@
     return config;
   }
 
+  // Streamer.bot settings use #RRGGBB or #AARRGGBB. CSS uses #RRGGBB and rgba().
+  function toCssColor(value, opacityOverride) {
+    let hex = String(value || '').trim().replace(/^#/, '');
+    if (/^[0-9a-fA-F]{8}$/.test(hex)) {
+      const a = parseInt(hex.slice(0, 2), 16) / 255;
+      const rgb = hex.slice(2);
+      return `rgba(${parseInt(rgb.slice(0,2),16)},${parseInt(rgb.slice(2,4),16)},${parseInt(rgb.slice(4,6),16)},${Math.max(0, Math.min(1, a * opacityOverride))})`;
+    }
+    if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+      const a = opacityOverride === undefined ? 1 : Math.max(0, Math.min(1, opacityOverride));
+      return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${a})`;
+    }
+    return value || '#ffffff';
+  }
+
   function getStackDirection(config) {
     if (config.stackDirection === 'forward') return 'forward';
     if (config.stackDirection === 'reverse') return 'reverse';
@@ -53,8 +70,6 @@
   function createLane(config) {
     const lane = document.createElement('div');
     lane.className = 'duhbuh-lane';
-    lane.dataset.position = config.position;
-    lane.dataset.stackDirection = getStackDirection(config);
     root.appendChild(lane);
     return lane;
   }
@@ -119,12 +134,11 @@
     el.querySelector('.duhbuh-meta').textContent = event.meta || '';
 
     el.style.setProperty('--duhbuh-scale', String(config.scale / 100));
-    el.style.setProperty('--duhbuh-background-color', config.backgroundColor);
-    el.style.setProperty('--duhbuh-title-color', config.titleColor);
-    el.style.setProperty('--duhbuh-message-color', config.messageColor);
-    el.style.setProperty('--duhbuh-meta-color', config.metaColor);
-    el.style.setProperty('--duhbuh-border-color', config.borderColor);
-    el.style.setProperty('--duhbuh-background-opacity', String(config.backgroundOpacity / 100));
+    el.style.setProperty('--duhbuh-background-color', toCssColor(config.backgroundColor, config.backgroundOpacity / 100));
+    el.style.setProperty('--duhbuh-title-color', toCssColor(config.titleColor));
+    el.style.setProperty('--duhbuh-message-color', toCssColor(config.messageColor));
+    el.style.setProperty('--duhbuh-meta-color', toCssColor(config.metaColor));
+    el.style.setProperty('--duhbuh-border-color', toCssColor(config.borderColor));
     el.style.setProperty('--duhbuh-border-width', `${config.borderWidth}px`);
     el.style.setProperty('--duhbuh-border-radius', `${config.borderRadius}px`);
     el.style.setProperty('--duhbuh-title-size', `${config.titleSize}px`);
@@ -150,6 +164,18 @@
   }
 
   function showNotification(event) {
+    const signature = `${event.channel || 'default'}|${event.title || ''}|${event.message || ''}|${event.meta || ''}`;
+    const now = Date.now();
+    const last = recentEvents.get(signature) || 0;
+    if (now - last < 1000) {
+      console.debug('[duhBuh Overlay] Suppressed duplicate notification:', signature);
+      return;
+    }
+    recentEvents.set(signature, now);
+    window.setTimeout(() => {
+      if ((recentEvents.get(signature) || 0) === now) recentEvents.delete(signature);
+    }, 1100);
+
     const state = getChannel(event);
     if (state.queue.length >= state.config.maxQueued) state.queue.shift();
     state.queue.push(event);
