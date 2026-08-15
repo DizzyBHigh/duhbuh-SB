@@ -5,7 +5,12 @@
     channel: 'default', position: 'bottom-center', offsetX: 0, offsetY: 0,
     maxVisible: 3, maxQueued: 20, stackDirection: 'auto', spacing: 10,
     duration: 5000, enterAnimation: 'slide', enterDuration: 300,
-    exitAnimation: 'fade', exitDuration: 300
+    exitAnimation: 'fade', exitDuration: 300,
+    scale: 100,
+    backgroundColor: '#E60F0F12', titleColor: '#FFFFFFFF',
+    messageColor: '#FFFFFFFF', metaColor: '#B3FFFFFF', borderColor: '#00000000',
+    backgroundOpacity: 90, borderWidth: 0, borderRadius: 12,
+    titleSize: 24, messageSize: 18, metaSize: 13
   };
   const channels = new Map();
 
@@ -26,6 +31,13 @@
     config.duration = Math.max(0, Number(config.duration) || DEFAULTS.duration);
     config.enterDuration = Math.max(0, Number(config.enterDuration) || 0);
     config.exitDuration = Math.max(0, Number(config.exitDuration) || 0);
+    config.scale = Math.max(50, Math.min(200, Number(config.scale) || DEFAULTS.scale));
+    config.backgroundOpacity = Math.max(0, Math.min(100, Number(config.backgroundOpacity) || 0));
+    config.borderWidth = Math.max(0, Number(config.borderWidth) || 0);
+    config.borderRadius = Math.max(0, Number(config.borderRadius) || 0);
+    config.titleSize = Math.max(8, Number(config.titleSize) || DEFAULTS.titleSize);
+    config.messageSize = Math.max(8, Number(config.messageSize) || DEFAULTS.messageSize);
+    config.metaSize = Math.max(8, Number(config.metaSize) || DEFAULTS.metaSize);
     return config;
   }
 
@@ -43,9 +55,6 @@
     lane.className = 'duhbuh-lane';
     lane.dataset.position = config.position;
     lane.dataset.stackDirection = getStackDirection(config);
-    lane.style.setProperty('--duhbuh-offset-x', `${config.offsetX}px`);
-    lane.style.setProperty('--duhbuh-offset-y', `${config.offsetY}px`);
-    lane.style.setProperty('--duhbuh-spacing', `${config.spacing}px`);
     root.appendChild(lane);
     return lane;
   }
@@ -109,6 +118,21 @@
     el.querySelector('.duhbuh-body').textContent = event.message || '';
     el.querySelector('.duhbuh-meta').textContent = event.meta || '';
 
+    el.style.setProperty('--duhbuh-scale', String(config.scale / 100));
+    el.style.setProperty('--duhbuh-background-color', config.backgroundColor);
+    el.style.setProperty('--duhbuh-title-color', config.titleColor);
+    el.style.setProperty('--duhbuh-message-color', config.messageColor);
+    el.style.setProperty('--duhbuh-meta-color', config.metaColor);
+    el.style.setProperty('--duhbuh-border-color', config.borderColor);
+    el.style.setProperty('--duhbuh-background-opacity', String(config.backgroundOpacity / 100));
+    el.style.setProperty('--duhbuh-border-width', `${config.borderWidth}px`);
+    el.style.setProperty('--duhbuh-border-radius', `${config.borderRadius}px`);
+    el.style.setProperty('--duhbuh-title-size', `${config.titleSize}px`);
+    el.style.setProperty('--duhbuh-message-size', `${config.messageSize}px`);
+    el.style.setProperty('--duhbuh-meta-size', `${config.metaSize}px`);
+    el.style.setProperty('--duhbuh-enter-duration', `${config.enterDuration}ms`);
+    el.style.setProperty('--duhbuh-exit-duration', `${config.exitDuration}ms`);
+
     state.lane.appendChild(el);
     const item = { el, event, removing: false };
     state.active.push(item);
@@ -154,10 +178,6 @@
   };
 
   const client = new StreamerbotClient({ host: '127.0.0.1', port: 8080, endpoint: '/' });
-
-  // Subscribe to the single event envelope used by our current overlay
-  // broadcaster. Listening to both General.Custom and Custom.Event caused
-  // one broadcast to be rendered twice.
   client.on('General.Custom', ({ event, data }) => {
     console.log('[duhBuh Overlay] General.Custom received:', event, data);
     handleOverlayPayload(data?.data || data);
@@ -167,6 +187,9 @@
 
   const params = new URLSearchParams(location.search);
   if (params.get('test') === '1') {
-    showNotification({ channel: 'default', title: 'duhBuh', message: 'Overlay connected', meta: 'Browser source test', duration: 3000, config: { position: 'top-center' } });
+    showNotification({
+      channel: 'default', title: 'duhBuh', message: 'Overlay connected', meta: 'Browser source test', duration: 3000,
+      config: { position: 'top-center' }
+    });
   }
 })();
