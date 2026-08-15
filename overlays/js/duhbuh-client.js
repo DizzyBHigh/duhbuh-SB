@@ -104,9 +104,24 @@
     el.style.setProperty('--duhbuh-meta-size',`${config.metaSize}px`);
     el.style.setProperty('--duhbuh-enter-duration',`${config.enterDuration}ms`);
     el.style.setProperty('--duhbuh-exit-duration',`${config.exitDuration}ms`);
-    // The CSS uses this variable for the whole element's visibility. Keep it at 1;
-    // background opacity is already applied to the background colour above.
     el.style.setProperty('--duhbuh-background-opacity','1');
+    console.log('[duhBuh Overlay] Applying notification config:', {
+      channel: config.channel,
+      backgroundColor: config.backgroundColor,
+      titleColor: config.titleColor,
+      messageColor: config.messageColor,
+      metaColor: config.metaColor,
+      borderColor: config.borderColor,
+      backgroundOpacity: config.backgroundOpacity,
+      scale: config.scale
+    });
+    console.log('[duhBuh Overlay] Computed notification styles:', {
+      background: el.style.getPropertyValue('--duhbuh-background-color'),
+      title: el.style.getPropertyValue('--duhbuh-title-color'),
+      message: el.style.getPropertyValue('--duhbuh-message-color'),
+      meta: el.style.getPropertyValue('--duhbuh-meta-color'),
+      border: el.style.getPropertyValue('--duhbuh-border-color')
+    });
     state.lane.appendChild(el);
     const item={el,event,removing:false}; state.active.push(item); applyLaneLayout(state);
     requestAnimationFrame(()=>el.classList.add('visible'));
@@ -127,8 +142,12 @@
   }
 
   function handleOverlayPayload(payload){
-    if(!payload||payload.eventName!=='duhbuh.overlay')return;
+    if(!payload)return;
+    console.log('[duhBuh Overlay] Overlay payload:', payload);
+    if(payload.eventName!=='duhbuh.overlay')return;
     const args=payload.args||{};
+    console.log('[duhBuh Overlay] Overlay args:', args);
+    console.log('[duhBuh Overlay] Overlay config:', args.config||{});
     showNotification({channel:args.channel||'default',title:args.title||'duhBuh',message:args.message||'',meta:args.meta||'',duration:args.duration,config:args.config||{}});
   }
 
@@ -139,7 +158,12 @@
   };
 
   const client=new StreamerbotClient({host:'127.0.0.1',port:8080,endpoint:'/'});
-  client.on('General.Custom',({event,data})=>{console.log('[duhBuh Overlay] General.Custom received:',event,data);handleOverlayPayload(data?.data||data);});
+  client.on('General.Custom',({event,data})=>{
+    console.log('[duhBuh Overlay] General.Custom received:',event,data);
+    const payload = data?.data || data;
+    console.log('[duhBuh Overlay] Extracted payload:', payload);
+    handleOverlayPayload(payload);
+  });
   console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
 
   const params=new URLSearchParams(location.search);
