@@ -73,8 +73,7 @@ public sealed class DuhBuhUI
         Window window = new Window { Title = _extensionName + " - Settings", Width = 760, Height = 920, MinWidth = 600, MinHeight = 650, WindowStartupLocation = WindowStartupLocation.CenterScreen, Background = ThemeBrush(theme, "WindowBackground") };
         DockPanel root = new DockPanel(); StackPanel header = BuildHeader(theme); if (header != null) { DockPanel.SetDock(header, Dock.Top); root.Children.Add(header); }
         StackPanel footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12) };
-        Button save = new Button { Content = "Save", Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(0, 0, 8, 0) }; Button close = new Button { Content = "Save & Exit", Padding = new Thickness(18, 7, 18, 7) };
-        save.Click += delegate { Save(root); }; close.Click += delegate { Save(root); window.Close(); }; footer.Children.Add(save); footer.Children.Add(close); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
+        Button save = new Button { Content = "Save", Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(0, 0, 8, 0) }; Button close = new Button { Content = "Save & Exit", Padding = new Thickness(18, 7, 18, 7) }; save.Click += delegate { Save(root); }; close.Click += delegate { Save(root); window.Close(); }; footer.Children.Add(save); footer.Children.Add(close); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
         TabControl tabs = new TabControl { Margin = new Thickness(8), Background = ThemeBrush(theme, "PanelBackground") };
         for (int i = 0; i < _categories.Count; i++) { string category = _categories[i]; if (category == "__header") continue; StackPanel panel = new StackPanel { Margin = new Thickness(18) }; BuildCategory(panel, category, theme); tabs.Items.Add(new TabItem { Header = category, Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel } }); }
         root.Children.Add(tabs); window.Content = root; return window;
@@ -82,7 +81,23 @@ public sealed class DuhBuhUI
 
     private StackPanel BuildHeader(string theme)
     {
-        string headerImage = Read(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage", "");
+        bool light = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
+        string key = light ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage";
+        string headerImage = "";
+        object configured;
+        if (_defaults.TryGetValue(key, out configured) && configured != null)
+            headerImage = Convert.ToString(configured, CultureInfo.InvariantCulture);
+        try
+        {
+            string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri;
+            if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved;
+        }
+        catch (Exception ex)
+        {
+            _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message);
+        }
+
+        _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage);
         StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
         if (!string.IsNullOrWhiteSpace(headerImage))
         {
@@ -92,10 +107,11 @@ public sealed class DuhBuhUI
                 bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
                 Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
                 panel.Children.Add(image);
+                _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage);
             }
             catch (Exception ex)
             {
-                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + ex.Message);
+                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message);
                 panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
             }
         }
@@ -149,22 +165,12 @@ public sealed class DuhBuhUI
         string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C757D" };
         for (int i = 0; i < colours.Length; i++) { string colour = colours[i]; Button swatchButton = new Button { Width = 38, Height = 32, Margin = new Thickness(3), Tag = colour, ToolTip = colour, Padding = new Thickness(0) }; swatchButton.Background = BrushFromHex(colour); swatchButton.BorderBrush = ThemeBrush(theme, "SecondaryText"); swatchButton.Click += delegate(object sender, RoutedEventArgs e) { string selected = (string)((Button)sender).Tag; custom.Text = selected; SetPreview(preview, previewText, selected); }; palette.Children.Add(swatchButton); }
         root.Children.Add(palette);
-        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
-        TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
-        custom = new TextBox { Text = initial, Width = 150, VerticalContentAlignment = VerticalAlignment.Center };
-        Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) };
-        customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
+        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) }; TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; custom = new TextBox { Text = initial, Width = 150, VerticalContentAlignment = VerticalAlignment.Center }; Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) }; customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
         custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
-        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) };
-        ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); };
-        buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
+        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right }; Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) }; ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); }; buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
     }
 
-    private void SetPreview(Border preview, TextBlock text, string colour)
-    {
-        preview.Background = BrushFromHex(colour); text.Text = colour; Color c; try { c = (Color)ColorConverter.ConvertFromString(colour); } catch { c = Colors.White; } double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0; text.Foreground = luminance > 0.6 ? Brushes.Black : Brushes.White;
-    }
+    private void SetPreview(Border preview, TextBlock text, string colour) { preview.Background = BrushFromHex(colour); text.Text = colour; Color c; try { c = (Color)ColorConverter.ConvertFromString(colour); } catch { c = Colors.White; } double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0; text.Foreground = luminance > 0.6 ? Brushes.Black : Brushes.White; }
     private void SetSwatch(Button button, string value) { button.Background = BrushFromHex(value); button.BorderBrush = new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)); }
     private Brush BrushFromHex(string value) { try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(NormalizeColor(value))); } catch { return Brushes.Transparent; } }
     private string NormalizeColor(string value) { if (string.IsNullOrWhiteSpace(value)) return ""; string v = value.Trim(); if (!v.StartsWith("#", StringComparison.Ordinal)) v = "#" + v; if (v.Length == 7) return "#FF" + v.Substring(1).ToUpperInvariant(); if (v.Length == 9) return "#" + v.Substring(1).ToUpperInvariant(); return ""; }
