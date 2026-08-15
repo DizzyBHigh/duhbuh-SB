@@ -23,17 +23,16 @@ public class CPHInline
             message => CPH.LogInfo(message)
         );
 
-        // Settings UI branding. Resolve the local repo assets; no image data is embedded in the C# source.
         string darkBanner = DuhBuhUIBannerAssets.DarkUri;
         string lightBanner = DuhBuhUIBannerAssets.LightUri;
         ui.AddHeader(darkBanner, lightBanner);
 
-        // DuhBuhUI reads persisted Streamer.bot globals when building the header.
-        // Register the resolved banner URIs there as well as in the UI defaults.
         CPH.SetGlobalVar("__duhbuh_headerDarkImage", darkBanner, true);
         CPH.SetGlobalVar("__duhbuh_headerLightImage", lightBanner, true);
 
-        ui.AddThemeSelector("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", "Dark");
+        // Radio groups are used instead of native ComboBoxes for the small fixed option sets.
+        // This avoids the unreadable native WPF selection highlight in Streamer.bot.
+        ui.AddRadioGroup("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
 
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
@@ -58,7 +57,7 @@ public class CPHInline
 
         ui.AddTitle("Position & Queue", "Overlay - Lurks");
         ui.AddToggleSwitch("Enable Lurk Notifications", "Show voluntary !lurk and !unlurk notifications. Automatic unpresent-lurker removal remains silent.", "Overlay - Lurks", "duhbuh_overlay_lurks_enabled", true);
-        ui.AddDropdown("Position", "Where the Lurk lane is anchored.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", new[] { "top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right" }, "bottom-center");
+        ui.AddRadioGroup("Position", "Where the Lurk lane is anchored.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", new[] { "top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right" }, "bottom-center");
         ui.AddSlider("Horizontal Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetX", 0, 1000, 0);
         ui.AddSlider("Vertical Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetY", 0, 1000, 0);
         ui.AddSlider("Maximum Visible", "Maximum number of Lurk notifications visible at once.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxVisible", 1, 10, 3);
@@ -68,9 +67,9 @@ public class CPHInline
 
         ui.AddTitle("Timing & Animation", "Overlay - Lurks");
         ui.AddSlider("Display Duration (seconds)", "How long each Lurk notification remains visible.", "Overlay - Lurks", "duhbuh_overlay_lurks_durationSeconds", 1, 60, 5);
-        ui.AddDropdown("Enter Animation", "How a Lurk notification appears.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", new[] { "slide", "fade", "scale", "none" }, "slide");
+        ui.AddRadioGroup("Enter Animation", "How a Lurk notification appears.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", new[] { "slide", "fade", "scale", "none" }, "slide");
         ui.AddSlider("Enter Duration (ms)", "Length of the entrance animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterDurationMs", 0, 2000, 300);
-        ui.AddDropdown("Exit Animation", "How a Lurk notification disappears.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", new[] { "fade", "slide", "scale", "none" }, "fade");
+        ui.AddRadioGroup("Exit Animation", "How a Lurk notification disappears.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", new[] { "fade", "slide", "scale", "none" }, "fade");
         ui.AddSlider("Exit Duration (ms)", "Length of the exit animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitDurationMs", 0, 2000, 300);
 
         ui.AddTitle("Appearance", "Overlay - Lurks");
