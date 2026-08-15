@@ -1,0 +1,43 @@
+name: fix-position-grid
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Fix 3x3 grid without UniformGrid'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Patch shared UI
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src/duhBuhUI/DuhBuhUI.cs')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('using System.Windows.Controls.Primitives;\n', '', 1)
+          old = '''UniformGrid group = new UniformGrid { Columns = 3, Rows = 3, Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }); box.Children.Insert(1, group);'''
+          new = '''Grid group = new Grid { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int r = 0; r < 3; r++) { group.RowDefinitions.Add(new RowDefinition()); group.ColumnDefinitions.Add(new ColumnDefinition()); } for (int j = 0; j < d.Options.Length; j++) { RadioButton radio = new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }; Grid.SetRow(radio, j / 3); Grid.SetColumn(radio, j % 3); group.Children.Add(radio); } box.Children.Insert(1, group);'''
+          if old not in text:
+              raise SystemExit('position UniformGrid block not found')
+          text = text.replace(old, new, 1)
+          old_save = '''UniformGrid uniformGroup = fe as UniformGrid; if (uniformGroup != null && uniformGroup.Tag != null) for (int i = 0; i < uniformGroup.Children.Count; i++) { RadioButton radio = uniformGroup.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); }'''
+          new_save = '''Grid gridGroup = fe as Grid; if (gridGroup != null && gridGroup.Tag != null) for (int i = 0; i < gridGroup.Children.Count; i++) { RadioButton radio = gridGroup.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); }'''
+          if old_save not in text:
+              raise SystemExit('UniformGrid save block not found')
+          text = text.replace(old_save, new_save, 1)
+          path.write_text(text, encoding='utf-8')
+      - name: Commit and remove workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/fix-position-grid.yml
+          git add src/duhBuhUI/DuhBuhUI.cs .github/workflows/fix-position-grid.yml
+          git commit -m "Fix 3x3 grid without UniformGrid"
+          git push
