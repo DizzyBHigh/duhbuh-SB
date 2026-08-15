@@ -267,11 +267,8 @@ public class CPHInline
     {
         if (!GetGlobalBool("duhbuh_overlay_lurks_enabled", true)) return;
 
-        int durationSeconds = GetGlobalInt("duhbuh_overlay_lurks_durationSeconds", duration / 1000);
-        if (durationSeconds < 1) durationSeconds = 1;
-        if (durationSeconds > 60) durationSeconds = 60;
+        int durationSeconds = Clamp(GetGlobalInt("duhbuh_overlay_lurks_durationSeconds", duration / 1000), 1, 60);
         int durationMs = durationSeconds * 1000;
-
         string position = GetGlobalString("duhbuh_overlay_lurks_position", "bottom-center").Trim().ToLowerInvariant();
         string stackDirection = GetGlobalString("duhbuh_overlay_lurks_stackDirection", "auto").Trim().ToLowerInvariant();
         string enterAnimation = GetGlobalString("duhbuh_overlay_lurks_enterAnimation", "slide").Trim().ToLowerInvariant();
@@ -284,12 +281,25 @@ public class CPHInline
         int enterDuration = Clamp(GetGlobalInt("duhbuh_overlay_lurks_enterDurationMs", 300), 0, 2000);
         int exitDuration = Clamp(GetGlobalInt("duhbuh_overlay_lurks_exitDurationMs", 300), 0, 2000);
 
+        int scale = Clamp(GetGlobalInt("duhbuh_overlay_lurks_scale", 100), 50, 200);
+        string backgroundColor = GetGlobalString("duhbuh_overlay_lurks_backgroundColor", "#E60F0F12");
+        string titleColor = GetGlobalString("duhbuh_overlay_lurks_titleColor", "#FFFFFFFF");
+        string messageColor = GetGlobalString("duhbuh_overlay_lurks_messageColor", "#FFFFFFFF");
+        string metaColor = GetGlobalString("duhbuh_overlay_lurks_metaColor", "#B3FFFFFF");
+        string borderColor = GetGlobalString("duhbuh_overlay_lurks_borderColor", "#00000000");
+        int backgroundOpacity = Clamp(GetGlobalInt("duhbuh_overlay_lurks_backgroundOpacity", 90), 0, 100);
+        int borderWidth = Clamp(GetGlobalInt("duhbuh_overlay_lurks_borderWidth", 0), 0, 10);
+        int borderRadius = Clamp(GetGlobalInt("duhbuh_overlay_lurks_borderRadius", 12), 0, 50);
+        int titleSize = Clamp(GetGlobalInt("duhbuh_overlay_lurks_titleSize", 24), 10, 72);
+        int messageSize = Clamp(GetGlobalInt("duhbuh_overlay_lurks_messageSize", 18), 8, 60);
+        int metaSize = Clamp(GetGlobalInt("duhbuh_overlay_lurks_metaSize", 13), 8, 40);
+
         string args = "{\"channel\":\"lurks\",\"title\":\"" + JsonEscape(title) + "\",\"message\":\"" + JsonEscape(message) + "\",\"meta\":\"" + JsonEscape(meta) + "\",\"duration\":" + durationMs + ",\"config\":{"
-            + "\"position\":\"" + JsonEscape(position) + "\"," 
-            + "\"offsetX\":" + offsetX + ",\"offsetY\":" + offsetY + ",\"maxVisible\":" + maxVisible + ",\"maxQueued\":" + maxQueued + ","
-            + "\"stackDirection\":\"" + JsonEscape(stackDirection) + "\",\"spacing\":" + spacing + ","
-            + "\"duration\":" + durationMs + ",\"enterAnimation\":\"" + JsonEscape(enterAnimation) + "\",\"enterDuration\":" + enterDuration + ","
-            + "\"exitAnimation\":\"" + JsonEscape(exitAnimation) + "\",\"exitDuration\":" + exitDuration + "}}";
+            + "\"position\":\"" + JsonEscape(position) + "\",\"offsetX\":" + offsetX + ",\"offsetY\":" + offsetY + ",\"maxVisible\":" + maxVisible + ",\"maxQueued\":" + maxQueued + ","
+            + "\"stackDirection\":\"" + JsonEscape(stackDirection) + "\",\"spacing\":" + spacing + ",\"duration\":" + durationMs + ","
+            + "\"enterAnimation\":\"" + JsonEscape(enterAnimation) + "\",\"enterDuration\":" + enterDuration + ",\"exitAnimation\":\"" + JsonEscape(exitAnimation) + "\",\"exitDuration\":" + exitDuration + ","
+            + "\"scale\":" + scale + ",\"backgroundColor\":\"" + JsonEscape(backgroundColor) + "\",\"titleColor\":\"" + JsonEscape(titleColor) + "\",\"messageColor\":\"" + JsonEscape(messageColor) + "\",\"metaColor\":\"" + JsonEscape(metaColor) + "\",\"borderColor\":\"" + JsonEscape(borderColor) + "\","
+            + "\"backgroundOpacity\":" + backgroundOpacity + ",\"borderWidth\":" + borderWidth + ",\"borderRadius\":" + borderRadius + ",\"titleSize\":" + titleSize + ",\"messageSize\":" + messageSize + ",\"metaSize\":" + metaSize + "}}";
 
         string json = "{\"timeStamp\":\"" + DateTime.UtcNow.ToString("o") + "\",\"event\":{\"source\":\"Custom\",\"type\":\"Event\"},\"data\":{\"eventName\":\"duhbuh.overlay\",\"useArgs\":true,\"args\":" + args + "}}";
         CPH.WebsocketBroadcastJson(json);
