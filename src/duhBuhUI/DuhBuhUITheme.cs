@@ -221,7 +221,7 @@ public static class DuhBuhUITheme
 
         Trigger selected = new Trigger
         {
-            Property = Selector.IsSelectedProperty,
+            Property = ComboBoxItem.IsSelectedProperty,
             Value = true
         };
         selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(selectedBackground)));
@@ -278,7 +278,7 @@ public static class DuhBuhUITheme
 
         Trigger selected = new Trigger
         {
-            Property = Selector.IsSelectedProperty,
+            Property = TabItem.IsSelectedProperty,
             Value = true
         };
         selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(selectedBackground)));
