@@ -2,6 +2,7 @@
 // IMPORTANT: Do not replace TabControl/TabItem templates or modify generated tab templates.
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -14,11 +15,7 @@ public static class DuhBuhUITheme
     {
         if (_initialized) return;
         _initialized = true;
-
-        EventManager.RegisterClassHandler(
-            typeof(Window),
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(OnWindowLoaded));
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
     }
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -26,14 +23,12 @@ public static class DuhBuhUITheme
         Window window = sender as Window;
         if (window == null) return;
         if (window.Title == null || window.Title.IndexOf("Settings", StringComparison.OrdinalIgnoreCase) < 0) return;
-
         Apply(window, IsLightWindow(window));
     }
 
     public static void Apply(Window window, bool light)
     {
         if (window == null) return;
-
         ResourceDictionary r = window.Resources;
         r[typeof(Button)] = CreateButtonStyle(light);
         r[typeof(TextBox)] = CreateTextBoxStyle(light);
@@ -41,38 +36,26 @@ public static class DuhBuhUITheme
         r[typeof(DatePicker)] = CreateDatePickerStyle(light);
         r[typeof(CheckBox)] = CreateCheckBoxStyle(light);
         r[typeof(RadioButton)] = CreateRadioButtonStyle(light);
-
         r["duhBuhSectionBackground"] = new SolidColorBrush(light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
         r["duhBuhSectionBorder"] = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
         r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 140, 205));
         r["duhBuhSectionText"] = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = new SolidColorBrush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
-
-        // Existing controls have already been created by DuhBuhUI by the time
-        // the Window Loaded event reaches this handler. Defer one dispatcher
-        // turn so the generated tab content is present before we group it.
-        window.Dispatcher.BeginInvoke(new Action(delegate
-        {
-            ApplySectionCards(window, light);
-        }));
+        window.Dispatcher.BeginInvoke(new Action(delegate { ApplySectionCards(window, light); }));
     }
 
     private static void ApplySectionCards(Window window, bool light)
     {
         TabControl tabs = FindTabControl(window);
         if (tabs == null) return;
-
         for (int i = 0; i < tabs.Items.Count; i++)
         {
             TabItem tab = tabs.Items[i] as TabItem;
             if (tab == null) continue;
-
             ScrollViewer scroll = tab.Content as ScrollViewer;
             if (scroll == null) continue;
-
             StackPanel category = scroll.Content as StackPanel;
             if (category == null) continue;
-
             ApplyCardsToCategory(category, light);
         }
     }
@@ -82,76 +65,72 @@ public static class DuhBuhUITheme
         if (parent == null) return null;
         TabControl direct = parent as TabControl;
         if (direct != null) return direct;
-
         int count = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < count; i++)
         {
             TabControl found = FindTabControl(VisualTreeHelper.GetChild(parent, i));
             if (found != null) return found;
         }
-
         return null;
     }
 
     private static void ApplyCardsToCategory(StackPanel category, bool light)
     {
-        // Do not process a category twice.
         if (category.Tag is string && (string)category.Tag == "__duhbuh_cards_applied") return;
-        category.Tag = "__duhbuh_cards_applied";
 
-        int index = 0;
-        while (index < category.Children.Count)
+        List<UIElement> original = new List<UIElement>();
+        for (int i = 0; i < category.Children.Count; i++) original.Add(category.Children[i]);
+
+        bool hasHeading = false;
+        for (int i = 0; i < original.Count; i++)
         {
-            TextBlock heading = category.Children[index] as TextBlock;
-            if (!IsSectionHeading(heading))
+            if (IsSectionHeading(original[i] as TextBlock)) { hasHeading = true; break; }
+        }
+        if (!hasHeading) return;
+
+        category.Tag = "__duhbuh_cards_applied";
+        category.Children.Clear();
+
+        Border currentCard = null;
+        StackPanel currentContent = null;
+
+        for (int i = 0; i < original.Count; i++)
+        {
+            UIElement child = original[i];
+            TextBlock heading = child as TextBlock;
+
+            if (IsSectionHeading(heading))
             {
-                index++;
+                currentContent = new StackPanel();
+                currentCard = new Border
+                {
+                    Background = new SolidColorBrush(light ? Color.FromRgb(252, 253, 255) : Color.FromRgb(39, 42, 48)),
+                    BorderBrush = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(10),
+                    Padding = new Thickness(14, 8, 14, 10),
+                    Margin = new Thickness(0, 0, 0, 14),
+                    Child = currentContent
+                };
+
+                heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
+                heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
+                heading.Padding = new Thickness(10, 7, 10, 7);
+                heading.Margin = new Thickness(0, 0, 0, 10);
+                heading.HorizontalAlignment = HorizontalAlignment.Stretch;
+                currentContent.Children.Add(heading);
+                category.Children.Add(currentCard);
                 continue;
             }
 
-            int nextHeading = index + 1;
-            while (nextHeading < category.Children.Count)
+            if (currentContent != null)
             {
-                TextBlock candidate = category.Children[nextHeading] as TextBlock;
-                if (IsSectionHeading(candidate)) break;
-                nextHeading++;
+                currentContent.Children.Add(child);
             }
-
-            category.Children.RemoveAt(index);
-
-            StackPanel content = new StackPanel();
-            content.Children.Add(heading);
-
-            StackPanel fields = new StackPanel();
-            while (index < nextHeading - 1 && index < category.Children.Count)
+            else
             {
-                UIElement child = category.Children[index];
-                category.Children.RemoveAt(index);
-                fields.Children.Add(child);
-                nextHeading--;
+                category.Children.Add(child);
             }
-
-            content.Children.Add(fields);
-
-            Border card = new Border
-            {
-                Background = new SolidColorBrush(light ? Color.FromRgb(252, 253, 255) : Color.FromRgb(39, 42, 48)),
-                BorderBrush = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(14, 8, 14, 10),
-                Margin = new Thickness(0, 0, 0, 14),
-                Child = content
-            };
-
-            heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
-            heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
-            heading.Padding = new Thickness(10, 7, 10, 7);
-            heading.Margin = new Thickness(0, 0, 0, 10);
-            heading.HorizontalAlignment = HorizontalAlignment.Stretch;
-
-            category.Children.Insert(index, card);
-            index++;
         }
     }
 
