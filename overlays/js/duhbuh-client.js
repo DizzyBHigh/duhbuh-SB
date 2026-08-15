@@ -8,8 +8,6 @@
     exitAnimation: 'fade', exitDuration: 300
   };
   const channels = new Map();
-  const recentlyHandled = new Map();
-  const DEDUPE_WINDOW_MS = 1000;
 
   function normalisePosition(position) {
     const valid = ['top-left','top-center','top-right','middle-left','center','middle-right','bottom-left','bottom-center','bottom-right'];
@@ -136,26 +134,6 @@
 
   function handleOverlayPayload(payload) {
     if (!payload || payload.eventName !== 'duhbuh.overlay') return;
-
-    // The same Streamer.bot custom notification can be exposed through more
-    // than one WebSocket event envelope. Ignore the same payload if it arrives
-    // again within the short deduplication window.
-    let dedupeKey;
-    try {
-      dedupeKey = JSON.stringify(payload);
-    } catch {
-      dedupeKey = null;
-    }
-    if (dedupeKey) {
-      const now = Date.now();
-      const previous = recentlyHandled.get(dedupeKey);
-      if (previous && now - previous < DEDUPE_WINDOW_MS) return;
-      recentlyHandled.set(dedupeKey, now);
-      for (const [key, timestamp] of recentlyHandled) {
-        if (now - timestamp >= DEDUPE_WINDOW_MS) recentlyHandled.delete(key);
-      }
-    }
-
     const args = payload.args || {};
     showNotification({
       channel: args.channel || 'default', title: args.title || 'duhBuh',
@@ -176,14 +154,15 @@
   };
 
   const client = new StreamerbotClient({ host: '127.0.0.1', port: 8080, endpoint: '/' });
+
+  // Subscribe to the single event envelope used by our current overlay
+  // broadcaster. Listening to both General.Custom and Custom.Event caused
+  // one broadcast to be rendered twice.
   client.on('General.Custom', ({ event, data }) => {
     console.log('[duhBuh Overlay] General.Custom received:', event, data);
     handleOverlayPayload(data?.data || data);
   });
-  client.on('Custom.Event', ({ event, data }) => {
-    console.log('[duhBuh Overlay] Custom.Event received:', event, data);
-    handleOverlayPayload(data?.data || data);
-  });
+
   console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
 
   const params = new URLSearchParams(location.search);
