@@ -15,9 +15,6 @@ public static class DuhBuhUITheme
         if (_initialized) return;
         _initialized = true;
 
-        // Streamer.bot's WPF host supports LoadedEvent reliably. Do not use
-        // FrameworkElement.InitializedEvent or data-binding APIs here; the
-        // embedded compiler/runtime may not expose them consistently.
         EventManager.RegisterClassHandler(
             typeof(Window),
             FrameworkElement.LoadedEvent,
@@ -29,7 +26,6 @@ public static class DuhBuhUITheme
         Window window = sender as Window;
         if (window == null) return;
         if (window.Title == null || window.Title.IndexOf("Settings", StringComparison.OrdinalIgnoreCase) < 0) return;
-
         Apply(window, IsLightWindow(window));
     }
 
@@ -42,28 +38,22 @@ public static class DuhBuhUITheme
         r[typeof(TextBox)] = CreateTextBoxStyle(light);
         r[typeof(ComboBox)] = CreateComboBoxStyle(light);
         r[typeof(DatePicker)] = CreateDatePickerStyle(light);
+        r[typeof(CheckBox)] = CreateCheckBoxStyle(light);
+        r[typeof(RadioButton)] = CreateRadioButtonStyle(light);
 
-        r["duhBuhSectionBackground"] = new SolidColorBrush(
-            light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
-        r["duhBuhSectionBorder"] = new SolidColorBrush(
-            light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
-        r["duhBuhAccent"] = new SolidColorBrush(
-            light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 140, 205));
-        r["duhBuhSectionText"] = new SolidColorBrush(
-            light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
-        r["duhBuhDescriptionText"] = new SolidColorBrush(
-            light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
+        r["duhBuhSectionBackground"] = new SolidColorBrush(light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
+        r["duhBuhSectionBorder"] = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
+        r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 140, 205));
+        r["duhBuhSectionText"] = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
+        r["duhBuhDescriptionText"] = new SolidColorBrush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        window.AddHandler(
-            FrameworkElement.LoadedEvent,
-            new RoutedEventHandler(OnElementLoaded));
+        window.AddHandler(FrameworkElement.LoadedEvent, new RoutedEventHandler(OnElementLoaded));
     }
 
     private static void OnElementLoaded(object sender, RoutedEventArgs e)
     {
         FrameworkElement element = e.OriginalSource as FrameworkElement;
         if (element == null) return;
-
         Window window = Window.GetWindow(element);
         if (window == null) return;
         bool light = IsLightWindow(window);
@@ -71,10 +61,8 @@ public static class DuhBuhUITheme
         TextBlock heading = element as TextBlock;
         if (heading != null && heading.FontSize >= 17 && heading.FontWeight == FontWeights.SemiBold)
         {
-            heading.Foreground = new SolidColorBrush(
-                light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
-            heading.Background = new SolidColorBrush(
-                light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
+            heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
+            heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
             heading.Padding = new Thickness(10, 6, 10, 6);
             heading.Margin = new Thickness(0, 12, 0, 8);
             heading.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -83,11 +71,9 @@ public static class DuhBuhUITheme
 
         StackPanel panel = element as StackPanel;
         if (panel == null) return;
-
         if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
         {
-            panel.Background = new SolidColorBrush(
-                light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(39, 42, 48));
+            panel.Background = new SolidColorBrush(light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(39, 42, 48));
             panel.Margin = new Thickness(0, 2, 0, 10);
         }
     }
@@ -96,14 +82,12 @@ public static class DuhBuhUITheme
     {
         bool hasText = false;
         bool hasControl = false;
-
         for (int i = 0; i < panel.Children.Count; i++)
         {
             UIElement child = panel.Children[i];
             if (child is TextBlock) hasText = true;
             if (child is Control || child is StackPanel) hasControl = true;
         }
-
         return hasText && hasControl;
     }
 
@@ -119,10 +103,7 @@ public static class DuhBuhUITheme
     private static Style CreateButtonStyle(bool light)
     {
         Color background = light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 110, 180);
-        Color hover = light ? Color.FromRgb(58, 108, 184) : Color.FromRgb(72, 130, 205);
-        Color pressed = light ? Color.FromRgb(35, 72, 132) : Color.FromRgb(45, 88, 145);
         Color border = light ? Color.FromRgb(32, 68, 125) : Color.FromRgb(90, 140, 205);
-
         Style style = new Style(typeof(Button));
         style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(background)));
         style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(Colors.White)));
@@ -132,44 +113,15 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
-
-        // Rounded button template using only APIs available in the embedded WPF runtime.
-        ControlTemplate template = new ControlTemplate(typeof(Button));
-        FrameworkElementFactory borderElement = new FrameworkElementFactory(typeof(Border));
-        borderElement.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-        borderElement.SetBinding(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
-        borderElement.SetBinding(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
-        borderElement.SetBinding(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
-        borderElement.SetValue(Border.PaddingProperty, new Thickness(8, 3, 8, 3));
-
-        FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        content.SetValue(TextElement.ForegroundProperty, new SolidColorBrush(Colors.White));
-        borderElement.AppendChild(content);
-        template.VisualTree = borderElement;
-        style.Setters.Add(new Setter(Control.TemplateProperty, template));
-
-        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(hover)));
-        style.Triggers.Add(mouseOver);
-
-        Trigger isPressed = new Trigger { Property = Button.IsPressedProperty, Value = true };
-        isPressed.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(pressed)));
-        style.Triggers.Add(isPressed);
-
         return style;
     }
 
     private static Style CreateTextBoxStyle(bool light)
     {
         Style style = new Style(typeof(TextBox));
-        style.Setters.Add(new Setter(Control.BackgroundProperty,
-            new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty,
-            new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty,
-            new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 5, 8, 5)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
@@ -179,12 +131,9 @@ public static class DuhBuhUITheme
     private static Style CreateComboBoxStyle(bool light)
     {
         Style style = new Style(typeof(ComboBox));
-        style.Setters.Add(new Setter(Control.BackgroundProperty,
-            new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty,
-            new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty,
-            new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(7, 4, 7, 4)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
@@ -194,14 +143,27 @@ public static class DuhBuhUITheme
     private static Style CreateDatePickerStyle(bool light)
     {
         Style style = new Style(typeof(DatePicker));
-        style.Setters.Add(new Setter(Control.BackgroundProperty,
-            new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty,
-            new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty,
-            new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
+        return style;
+    }
+
+    private static Style CreateCheckBoxStyle(bool light)
+    {
+        Style style = new Style(typeof(CheckBox));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243))));
+        style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0, 4, 0, 4)));
+        return style;
+    }
+
+    private static Style CreateRadioButtonStyle(bool light)
+    {
+        Style style = new Style(typeof(RadioButton));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243))));
+        style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0, 3, 0, 3)));
         return style;
     }
 }
