@@ -1,5 +1,6 @@
 // Paste this action into Streamer.bot after adding DuhBuhUI.cs to the same code action.
-// The action only defines settings; runtime behavior is in Lurks.cs.
+// The action defines Lurks settings, including the Lurks overlay notification profile.
+// Runtime behavior remains in Lurks.cs.
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Windows;
 public class CPHInline
 {
     public string extensionName = "duhBuh Lurks";
-    public string extensionVersion = "0.1.0";
+    public string extensionVersion = "0.2.0";
 
     public bool Execute()
     {
@@ -43,6 +44,21 @@ public class CPHInline
         ui.AddTextbox("Lurk Stats (hasn't lurked yet)", "Variables: %user%", "Chat Responses", "duhbuh_lurks_messagesLurkStatsHasntLurkedYet", "@%user%, you haven't ever lurked yet.", false);
         ui.AddTextbox("Leaderboard Infix", "Used between lurk count and total time in leaderboard output.", "Chat Responses", "duhbuh_lurks_messagesLeaderboardInfix", "times for a total of", false);
         ui.AddTextbox("Leaderboard Own Rank", "Variables: %user%, %rank%, %lurkCount%, %totalLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLeaderboardOwnRank", "@%user%, your own rank is #%rank% with %lurkCount% lurks and a total of %totalLurkTime%", false);
+
+        ui.AddTitle("Overlay - Lurks", "Overlay - Lurks");
+        ui.AddToggleSwitch("Enable Lurk Notifications", "Show voluntary !lurk and !unlurk notifications in the duhBuh OBS overlay. Automatic unpresent-lurker removal remains silent.", "Overlay - Lurks", "duhbuh_overlay_lurks_enabled", true);
+        ui.AddTextbox("Position", "Anchor position. Valid values: top-left, top-center, top-right, middle-left, center, middle-right, bottom-left, bottom-center, bottom-right.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", "bottom-center", false);
+        ui.AddSlider("Horizontal Offset", "Pixel inset from the selected anchor. Positive values move inward from the edge.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetX", 0, 1000, 0);
+        ui.AddSlider("Vertical Offset", "Pixel inset from the selected anchor. Positive values move inward from the edge.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetY", 0, 1000, 0);
+        ui.AddSlider("Maximum Visible", "Maximum number of Lurk notifications visible at once.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxVisible", 1, 10, 3);
+        ui.AddSlider("Maximum Queued", "Maximum number of additional Lurk notifications waiting to be shown.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxQueued", 0, 50, 20);
+        ui.AddTextbox("Stack Direction", "Automatic grows inward from the selected edge. Valid values: auto, forward, reverse.", "Overlay - Lurks", "duhbuh_overlay_lurks_stackDirection", "auto", false);
+        ui.AddSlider("Notification Spacing", "Pixel spacing between Lurk notifications in the same lane.", "Overlay - Lurks", "duhbuh_overlay_lurks_spacing", 0, 100, 10);
+        ui.AddSlider("Display Duration (seconds)", "How long each Lurk notification remains visible. Set to 0 for persistent notifications.", "Overlay - Lurks", "duhbuh_overlay_lurks_durationSeconds", 1, 60, 5);
+        ui.AddTextbox("Enter Animation", "Valid values: slide, fade, scale, none.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", "slide", false);
+        ui.AddSlider("Enter Duration (ms)", "Length of the notification entrance animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterDurationMs", 0, 2000, 300);
+        ui.AddTextbox("Exit Animation", "Valid values: fade, slide, scale, none.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", "fade", false);
+        ui.AddSlider("Exit Duration (ms)", "Length of the notification exit animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitDurationMs", 0, 2000, 300);
 
         ui.AddTitle("Translations", "Translations");
         ui.AddTextbox("second/seconds", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationSeconds", "second/seconds", false);
