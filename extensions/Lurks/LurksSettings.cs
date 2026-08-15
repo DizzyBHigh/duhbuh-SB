@@ -1,6 +1,5 @@
 // Paste this action into Streamer.bot after adding DuhBuhUI.cs to the same code action.
-// The action defines Lurks settings, including the Lurks overlay notification profile.
-// Runtime behavior remains in Lurks.cs.
+// Lurks settings uses the shared duhBuhUI controls and persists overlay profile settings.
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Windows;
 public class CPHInline
 {
     public string extensionName = "duhBuh Lurks";
-    public string extensionVersion = "0.2.0";
+    public string extensionVersion = "0.3.0";
 
     public bool Execute()
     {
@@ -24,10 +23,12 @@ public class CPHInline
             message => CPH.LogInfo(message)
         );
 
+        ui.AddThemeSelector("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", "Dark");
+
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
         ui.AddToggleSwitch("Remove Unpresent Lurkers", "Automatically end lurks when viewers have been absent from Streamer.bot's Twitch Present Viewers list for the configured timeout.", "General", "duhbuh_lurks_removeUnpresentLurkers", true);
-        ui.AddSlider("Unpresent Lurker Timeout", "Minutes a lurker must remain absent before their lurk is automatically ended. Your Present Viewers update interval affects how quickly this can be detected.", "General", "duhbuh_lurks_unpresentTimeoutMinutes", 1, 60, 5);
+        ui.AddSlider("Unpresent Lurker Timeout", "Minutes a lurker must remain absent before their lurk is automatically ended.", "General", "duhbuh_lurks_unpresentTimeoutMinutes", 1, 60, 5);
         ui.AddToggleSwitch("Unlurk Chatters", "End a lurk automatically after the configured number of chat messages.", "General", "duhbuh_lurks_chattingUnlurks", true);
         ui.AddSlider("Unlurk Chatters Threshold", "Number of chat messages required to end a lurk.", "General", "duhbuh_lurks_chattingUnlurksThreshold", 1, 10, 3);
         ui.AddToggleSwitch("Send Messages As Replies", "Post chat responses as replies instead.", "General", "duhbuh_lurks_postMessagesAsReplies", true);
@@ -45,20 +46,40 @@ public class CPHInline
         ui.AddTextbox("Leaderboard Infix", "Used between lurk count and total time in leaderboard output.", "Chat Responses", "duhbuh_lurks_messagesLeaderboardInfix", "times for a total of", false);
         ui.AddTextbox("Leaderboard Own Rank", "Variables: %user%, %rank%, %lurkCount%, %totalLurkTime%", "Chat Responses", "duhbuh_lurks_messagesLeaderboardOwnRank", "@%user%, your own rank is #%rank% with %lurkCount% lurks and a total of %totalLurkTime%", false);
 
-        ui.AddTitle("Overlay - Lurks", "Overlay - Lurks");
-        ui.AddToggleSwitch("Enable Lurk Notifications", "Show voluntary !lurk and !unlurk notifications in the duhBuh OBS overlay. Automatic unpresent-lurker removal remains silent.", "Overlay - Lurks", "duhbuh_overlay_lurks_enabled", true);
-        ui.AddTextbox("Position", "Anchor position. Valid values: top-left, top-center, top-right, middle-left, center, middle-right, bottom-left, bottom-center, bottom-right.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", "bottom-center", false);
-        ui.AddSlider("Horizontal Offset", "Pixel inset from the selected anchor. Positive values move inward from the edge.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetX", 0, 1000, 0);
-        ui.AddSlider("Vertical Offset", "Pixel inset from the selected anchor. Positive values move inward from the edge.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetY", 0, 1000, 0);
+        ui.AddTitle("Position & Queue", "Overlay - Lurks");
+        ui.AddToggleSwitch("Enable Lurk Notifications", "Show voluntary !lurk and !unlurk notifications. Automatic unpresent-lurker removal remains silent.", "Overlay - Lurks", "duhbuh_overlay_lurks_enabled", true);
+        ui.AddDropdown("Position", "Where the Lurk lane is anchored.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", new[] {
+            "top-left", "top-center", "top-right",
+            "middle-left", "center", "middle-right",
+            "bottom-left", "bottom-center", "bottom-right"
+        }, "bottom-center");
+        ui.AddSlider("Horizontal Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetX", 0, 1000, 0);
+        ui.AddSlider("Vertical Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetY", 0, 1000, 0);
         ui.AddSlider("Maximum Visible", "Maximum number of Lurk notifications visible at once.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxVisible", 1, 10, 3);
         ui.AddSlider("Maximum Queued", "Maximum number of additional Lurk notifications waiting to be shown.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxQueued", 0, 50, 20);
-        ui.AddTextbox("Stack Direction", "Automatic grows inward from the selected edge. Valid values: auto, forward, reverse.", "Overlay - Lurks", "duhbuh_overlay_lurks_stackDirection", "auto", false);
+        ui.AddRadioGroup("Stack Direction", "Automatic grows inward from the selected edge.", "Overlay - Lurks", "duhbuh_overlay_lurks_stackDirection", new[] { "auto", "forward", "reverse" }, "auto");
         ui.AddSlider("Notification Spacing", "Pixel spacing between Lurk notifications in the same lane.", "Overlay - Lurks", "duhbuh_overlay_lurks_spacing", 0, 100, 10);
-        ui.AddSlider("Display Duration (seconds)", "How long each Lurk notification remains visible. Set to 0 for persistent notifications.", "Overlay - Lurks", "duhbuh_overlay_lurks_durationSeconds", 1, 60, 5);
-        ui.AddTextbox("Enter Animation", "Valid values: slide, fade, scale, none.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", "slide", false);
-        ui.AddSlider("Enter Duration (ms)", "Length of the notification entrance animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterDurationMs", 0, 2000, 300);
-        ui.AddTextbox("Exit Animation", "Valid values: fade, slide, scale, none.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", "fade", false);
-        ui.AddSlider("Exit Duration (ms)", "Length of the notification exit animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitDurationMs", 0, 2000, 300);
+
+        ui.AddTitle("Timing & Animation", "Overlay - Lurks");
+        ui.AddSlider("Display Duration (seconds)", "How long each Lurk notification remains visible.", "Overlay - Lurks", "duhbuh_overlay_lurks_durationSeconds", 1, 60, 5);
+        ui.AddDropdown("Enter Animation", "How a Lurk notification appears.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", new[] { "slide", "fade", "scale", "none" }, "slide");
+        ui.AddSlider("Enter Duration (ms)", "Length of the entrance animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterDurationMs", 0, 2000, 300);
+        ui.AddDropdown("Exit Animation", "How a Lurk notification disappears.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", new[] { "fade", "slide", "scale", "none" }, "fade");
+        ui.AddSlider("Exit Duration (ms)", "Length of the exit animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitDurationMs", 0, 2000, 300);
+
+        ui.AddTitle("Appearance", "Overlay - Lurks");
+        ui.AddSlider("Scale (%)", "Overall notification scale. 100% is the default size.", "Overlay - Lurks", "duhbuh_overlay_lurks_scale", 50, 200, 100);
+        ui.AddColorPicker("Background Colour", "Notification background. Use #RRGGBB or #AARRGGBB.", "Overlay - Lurks", "duhbuh_overlay_lurks_backgroundColor", "#E60F0F12");
+        ui.AddColorPicker("Title Colour", "Title text colour.", "Overlay - Lurks", "duhbuh_overlay_lurks_titleColor", "#FFFFFFFF");
+        ui.AddColorPicker("Message Colour", "Main message text colour.", "Overlay - Lurks", "duhbuh_overlay_lurks_messageColor", "#FFFFFFFF");
+        ui.AddColorPicker("Meta Colour", "Secondary/meta text colour.", "Overlay - Lurks", "duhbuh_overlay_lurks_metaColor", "#B3FFFFFF");
+        ui.AddColorPicker("Border Colour", "Notification border colour.", "Overlay - Lurks", "duhbuh_overlay_lurks_borderColor", "#00000000");
+        ui.AddSlider("Background Opacity (%)", "Opacity of the notification background. The colour alpha is also respected.", "Overlay - Lurks", "duhbuh_overlay_lurks_backgroundOpacity", 0, 100, 90);
+        ui.AddSlider("Border Width (px)", "Width of the notification border.", "Overlay - Lurks", "duhbuh_overlay_lurks_borderWidth", 0, 10, 0);
+        ui.AddSlider("Border Radius (px)", "Corner radius of the notification.", "Overlay - Lurks", "duhbuh_overlay_lurks_borderRadius", 0, 50, 12);
+        ui.AddSlider("Title Size (px)", "Title font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_titleSize", 10, 72, 24);
+        ui.AddSlider("Message Size (px)", "Main message font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_messageSize", 8, 60, 18);
+        ui.AddSlider("Meta Size (px)", "Meta font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_metaSize", 8, 40, 13);
 
         ui.AddTitle("Translations", "Translations");
         ui.AddTextbox("second/seconds", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationSeconds", "second/seconds", false);
