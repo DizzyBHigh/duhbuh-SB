@@ -82,12 +82,7 @@ public sealed class DuhBuhUI
 
     private StackPanel BuildHeader(string theme)
     {
-        string key = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage";
-        object headerValue = null;
-        string headerImage = "";
-        if (_defaults.TryGetValue(key, out headerValue) && headerValue != null)
-            headerImage = Convert.ToString(headerValue, CultureInfo.InvariantCulture);
-        _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage);
+        string headerImage = Read(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage", "");
         StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
         if (!string.IsNullOrWhiteSpace(headerImage))
         {
@@ -97,11 +92,10 @@ public sealed class DuhBuhUI
                 bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
                 Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
                 panel.Children.Add(image);
-                _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage);
             }
             catch (Exception ex)
             {
-                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message);
+                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + ex.Message);
                 panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
             }
         }
@@ -125,17 +119,63 @@ public sealed class DuhBuhUI
         for (int i = 0; i < _buttons.Count; i++) { ButtonDefinition d = _buttons[i]; if (d.Category != category) continue; StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = d.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = d.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
     }
 
-    private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme) { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = NormalizeColor(Read(d.Key, (string)d.DefaultValue)) ?? "#FFFFFFFF"; TextBox text = new TextBox { Text = current, Tag = d.Key, MinWidth = 160 }; Button pick = new Button { Content = "Pick…", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 4, 10, 4) }; StackPanel row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(text); row.Children.Add(pick); pick.Click += delegate { text.Text = current; }; box.Children.Insert(1, row); panel.Children.Add(box); }
-    private StackPanel FieldBox(string theme, string description) { StackPanel box = new StackPanel { Margin = new Thickness(0, 0, 0, 12) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, FontSize = 11, Foreground = ThemeBrush(theme, "SecondaryText"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 5) }); return box; }
-    private void RegisterCategory(string category) { if (string.IsNullOrEmpty(category) || _categories.Contains(category)) return; _categories.Add(category); }
+    private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme)
+    {
+        StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+        string current = NormalizeColor(Read(d.Key, (string)d.DefaultValue)); if (current == "") current = "#FFFFFFFF";
+        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), Tag = d.Key };
+        Button swatch = new Button { Width = 42, Height = 30, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key, ToolTip = "Click to choose a colour" };
+        TextBox hex = new TextBox { Text = current, Width = 120, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key };
+        Button choose = new Button { Content = "Choose…", Padding = new Thickness(10, 4, 10, 4), Tag = d.Key }; SetSwatch(swatch, current);
+        swatch.Click += delegate { OpenColorPicker(hex, swatch, theme); }; choose.Click += delegate { OpenColorPicker(hex, swatch, theme); }; hex.LostFocus += delegate { string c = NormalizeColor(hex.Text); if (c != "") { hex.Text = c; SetSwatch(swatch, c); } };
+        row.Children.Add(swatch); row.Children.Add(hex); row.Children.Add(choose); box.Children.Insert(1, row); box.Children.Insert(2, new TextBlock { Text = "Use the swatch or enter #RRGGBB / #AARRGGBB", Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 2, 0, 0) }); panel.Children.Add(box);
+    }
+
+    private StackPanel FieldBox(string theme, string description)
+    {
+        StackPanel box = new StackPanel { Margin = new Thickness(0, 4, 0, 14) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 3, 0, 0) }); return box;
+    }
+
+    private void OpenColorPicker(TextBox target, Button swatch, string theme)
+    {
+        string initial = NormalizeColor(target.Text); if (initial == "") initial = "#FFFFFFFF";
+        Window picker = new Window { Title = "Choose Colour", Width = 520, Height = 480, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = ThemeBrush(theme, "WindowBackground") };
+        StackPanel root = new StackPanel { Margin = new Thickness(18) };
+        root.Children.Add(new TextBlock { Text = "Choose a notification colour", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 0, 0, 10) });
+        Border preview = new Border { Height = 46, CornerRadius = new System.Windows.CornerRadius(4), Margin = new Thickness(0, 0, 0, 12), BorderBrush = ThemeBrush(theme, "SecondaryText"), BorderThickness = new Thickness(1) };
+        TextBlock previewText = new TextBlock { Text = initial, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, FontWeight = FontWeights.Bold }; preview.Child = previewText; SetPreview(preview, previewText, initial); root.Children.Add(preview);
+        TextBox custom = null;
+        WrapPanel palette = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 12) };
+        string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C757D" };
+        for (int i = 0; i < colours.Length; i++) { string colour = colours[i]; Button swatchButton = new Button { Width = 38, Height = 32, Margin = new Thickness(3), Tag = colour, ToolTip = colour, Padding = new Thickness(0) }; swatchButton.Background = BrushFromHex(colour); swatchButton.BorderBrush = ThemeBrush(theme, "SecondaryText"); swatchButton.Click += delegate(object sender, RoutedEventArgs e) { string selected = (string)((Button)sender).Tag; custom.Text = selected; SetPreview(preview, previewText, selected); }; palette.Children.Add(swatchButton); }
+        root.Children.Add(palette);
+        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+        custom = new TextBox { Text = initial, Width = 150, VerticalContentAlignment = VerticalAlignment.Center };
+        Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) };
+        customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
+        custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
+        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) };
+        ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); };
+        buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
+    }
+
+    private void SetPreview(Border preview, TextBlock text, string colour)
+    {
+        preview.Background = BrushFromHex(colour); text.Text = colour; Color c; try { c = (Color)ColorConverter.ConvertFromString(colour); } catch { c = Colors.White; } double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0; text.Foreground = luminance > 0.6 ? Brushes.Black : Brushes.White;
+    }
+    private void SetSwatch(Button button, string value) { button.Background = BrushFromHex(value); button.BorderBrush = new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)); }
+    private Brush BrushFromHex(string value) { try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(NormalizeColor(value))); } catch { return Brushes.Transparent; } }
+    private string NormalizeColor(string value) { if (string.IsNullOrWhiteSpace(value)) return ""; string v = value.Trim(); if (!v.StartsWith("#", StringComparison.Ordinal)) v = "#" + v; if (v.Length == 7) return "#FF" + v.Substring(1).ToUpperInvariant(); if (v.Length == 9) return "#" + v.Substring(1).ToUpperInvariant(); return ""; }
+    private void RegisterCategory(string category) { if (string.IsNullOrEmpty(category)) category = "General"; if (!_categories.Contains(category)) _categories.Add(category); }
+    private Brush ThemeBrush(string theme, string role) { if (string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase)) { if (role == "WindowBackground") return new SolidColorBrush(Color.FromRgb(246, 247, 249)); if (role == "PanelBackground") return new SolidColorBrush(Color.FromRgb(255, 255, 255)); if (role == "PrimaryText") return new SolidColorBrush(Color.FromRgb(30, 32, 38)); if (role == "SecondaryText") return new SolidColorBrush(Color.FromRgb(90, 94, 104)); if (role == "AccentText") return new SolidColorBrush(Color.FromRgb(44, 90, 160)); } if (role == "WindowBackground") return new SolidColorBrush(Color.FromRgb(28, 30, 34)); if (role == "PanelBackground") return new SolidColorBrush(Color.FromRgb(36, 39, 45)); if (role == "PrimaryText") return new SolidColorBrush(Color.FromRgb(240, 242, 245)); if (role == "SecondaryText") return new SolidColorBrush(Color.FromRgb(170, 175, 185)); if (role == "AccentText") return new SolidColorBrush(Color.FromRgb(115, 170, 255)); return Brushes.White; }
+    private DateTime? ParseDate(string value) { DateTime parsed; return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed) ? (DateTime?)parsed.Date : null; }
+    private string ExtractTime(string value) { DateTime parsed; if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed)) return parsed.ToString("HH:mm", CultureInfo.InvariantCulture); return value; }
     private object ReadObject(string key, object fallback) { try { object value = _getObject(key, true); return value ?? fallback; } catch { return fallback; } }
     private bool Read(string key, bool fallback) { try { bool? value = _getBool(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
     private int Read(string key, int fallback) { try { int? value = _getInt(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
     private string Read(string key, string fallback) { try { string value = _getString(key, true); return value ?? fallback; } catch { return fallback; } }
     private void Save(DockPanel root) { foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; SaveTagged(root, item.Key); } _logInfo("[duhBuhUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + "."); }
-    private void SaveTagged(DependencyObject parent, string key) { foreach (object childObject in LogicalTreeHelper.GetChildren(parent)) { DependencyObject dep = childObject as DependencyObject; if (dep == null) continue; FrameworkElement fe = dep as FrameworkElement; if (fe != null && Equals(fe.Tag, key)) { CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true); Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true); TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true); ComboBox co = fe as ComboBox; if (co != null) _setGlobal(key, Convert.ToString(co.SelectedItem, CultureInfo.InvariantCulture), true); DatePicker dp = fe as DatePicker; if (dp != null) _setGlobal(key, dp.SelectedDate.HasValue ? dp.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "", true); } SaveTagged(dep, key); } }
-    private string NormalizeColor(string value) { if (string.IsNullOrWhiteSpace(value)) return null; string v = value.Trim(); if (!v.StartsWith("#", StringComparison.Ordinal)) v = "#" + v; if (v.Length == 7) v = "#FF" + v.Substring(1); if (v.Length != 9) return null; return v.ToUpperInvariant(); }
-    private DateTime? ParseDate(string value) { DateTime result; return DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out result) ? result : (DateTime?)null; }
-    private string ExtractTime(string value) { if (string.IsNullOrWhiteSpace(value)) return ""; int p = value.IndexOf(' '); return p >= 0 && p + 1 < value.Length ? value.Substring(p + 1) : value; }
-    private Brush ThemeBrush(string theme, string name) { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? (name == "WindowBackground" ? "#FFF4F4F4" : name == "PanelBackground" ? "#FFFFFFFF" : name == "PrimaryText" ? "#FF202020" : name == "SecondaryText" ? "#FF666666" : "#FF0066CC") : (name == "WindowBackground" ? "#FF181818" : name == "PanelBackground" ? "#FF242424" : name == "PrimaryText" ? "#FFF0F0F0" : name == "SecondaryText" ? "#FFAAAAAA" : "#FF66AAFF")); }
+    private void SaveTagged(DependencyObject parent, string key) { foreach (object childObject in LogicalTreeHelper.GetChildren(parent)) { DependencyObject dep = childObject as DependencyObject; if (dep == null) continue; FrameworkElement fe = dep as FrameworkElement; if (fe != null && Equals(fe.Tag, key)) { CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true); Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true); TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true); ComboBox combo = fe as ComboBox; if (combo != null) _setGlobal(key, combo.SelectedItem == null ? "" : combo.SelectedItem.ToString(), true); StackPanel group = fe as StackPanel; if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { RadioButton radio = group.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); } DatePicker date = fe as DatePicker; if (date != null) { string current = Read(key, ""); string time = ExtractTime(current); string dateText = date.SelectedDate.HasValue ? date.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : ""; if (!string.IsNullOrWhiteSpace(time) && time != current && current.IndexOf(':') >= 0) _setGlobal(key, dateText + " " + time, true); else _setGlobal(key, dateText, true); } if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { TextBox colorBox = group.Children[i] as TextBox; if (colorBox != null) { string color = NormalizeColor(colorBox.Text); if (color != "") { _setGlobal(key, color, true); break; } } } } SaveTagged(dep, key); } }
 }
