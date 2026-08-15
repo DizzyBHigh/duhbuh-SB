@@ -102,7 +102,7 @@ public class CPHInline
             return true;
         }
         TimeSpan average = TimeSpan.FromSeconds((double)total / count);
-        string message = GetGlobalString("duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total of %totalLurkTime%. Your average lurking time is %averageLurkTime%.");
+        string message = GetGlobalString("duhbuh_lurks_messagesLurkStats", "@%user%, you have been lurking for %lurkCount% times and a total time of %totalLurkTime%. Your average lurking time is %averageLurkTime%.");
         message = message.Replace("%user%", display).Replace("%lurkCount%", count.ToString()).Replace("%totalLurkTime%", FormatDuration(TimeSpan.FromSeconds(total))).Replace("%averageLurkTime%", FormatDuration(average));
         Send(message);
         return true;
@@ -265,9 +265,37 @@ public class CPHInline
 
     private void BroadcastOverlay(string title, string message, string meta, int duration)
     {
-        string json = "{\"timeStamp\":\"" + DateTime.UtcNow.ToString("o") + "\",\"event\":{\"source\":\"Custom\",\"type\":\"Event\"},\"data\":{\"eventName\":\"duhbuh.overlay\",\"useArgs\":true,\"args\":{\"title\":\"" + JsonEscape(title) + "\",\"message\":\"" + JsonEscape(message) + "\",\"meta\":\"" + JsonEscape(meta) + "\",\"duration\":" + duration + "}}}";
+        if (!GetGlobalBool("duhbuh_overlay_lurks_enabled", true)) return;
+
+        int durationSeconds = GetGlobalInt("duhbuh_overlay_lurks_durationSeconds", duration / 1000);
+        if (durationSeconds < 1) durationSeconds = 1;
+        if (durationSeconds > 60) durationSeconds = 60;
+        int durationMs = durationSeconds * 1000;
+
+        string position = GetGlobalString("duhbuh_overlay_lurks_position", "bottom-center").Trim().ToLowerInvariant();
+        string stackDirection = GetGlobalString("duhbuh_overlay_lurks_stackDirection", "auto").Trim().ToLowerInvariant();
+        string enterAnimation = GetGlobalString("duhbuh_overlay_lurks_enterAnimation", "slide").Trim().ToLowerInvariant();
+        string exitAnimation = GetGlobalString("duhbuh_overlay_lurks_exitAnimation", "fade").Trim().ToLowerInvariant();
+        int offsetX = Clamp(GetGlobalInt("duhbuh_overlay_lurks_offsetX", 0), 0, 1000);
+        int offsetY = Clamp(GetGlobalInt("duhbuh_overlay_lurks_offsetY", 0), 0, 1000);
+        int maxVisible = Clamp(GetGlobalInt("duhbuh_overlay_lurks_maxVisible", 3), 1, 10);
+        int maxQueued = Clamp(GetGlobalInt("duhbuh_overlay_lurks_maxQueued", 20), 0, 50);
+        int spacing = Clamp(GetGlobalInt("duhbuh_overlay_lurks_spacing", 10), 0, 100);
+        int enterDuration = Clamp(GetGlobalInt("duhbuh_overlay_lurks_enterDurationMs", 300), 0, 2000);
+        int exitDuration = Clamp(GetGlobalInt("duhbuh_overlay_lurks_exitDurationMs", 300), 0, 2000);
+
+        string args = "{\"channel\":\"lurks\",\"title\":\"" + JsonEscape(title) + "\",\"message\":\"" + JsonEscape(message) + "\",\"meta\":\"" + JsonEscape(meta) + "\",\"duration\":" + durationMs + ",\"config\":{"
+            + "\"position\":\"" + JsonEscape(position) + "\"," 
+            + "\"offsetX\":" + offsetX + ",\"offsetY\":" + offsetY + ",\"maxVisible\":" + maxVisible + ",\"maxQueued\":" + maxQueued + ","
+            + "\"stackDirection\":\"" + JsonEscape(stackDirection) + "\",\"spacing\":" + spacing + ","
+            + "\"duration\":" + durationMs + ",\"enterAnimation\":\"" + JsonEscape(enterAnimation) + "\",\"enterDuration\":" + enterDuration + ","
+            + "\"exitAnimation\":\"" + JsonEscape(exitAnimation) + "\",\"exitDuration\":" + exitDuration + "}}";
+
+        string json = "{\"timeStamp\":\"" + DateTime.UtcNow.ToString("o") + "\",\"event\":{\"source\":\"Custom\",\"type\":\"Event\"},\"data\":{\"eventName\":\"duhbuh.overlay\",\"useArgs\":true,\"args\":" + args + "}}";
         CPH.WebsocketBroadcastJson(json);
     }
+
+    private int Clamp(int value, int min, int max) { return value < min ? min : (value > max ? max : value); }
 
     private string JsonEscape(string value)
     {
