@@ -28,9 +28,9 @@ public static class DuhBuhUITheme
         r[typeof(DatePicker)] = CreateDatePickerStyle(light);
 
         r["duhBuhSectionBackground"] = new SolidColorBrush(
-            light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(37, 40, 46));
+            light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
         r["duhBuhSectionBorder"] = new SolidColorBrush(
-            light ? Color.FromRgb(220, 223, 229) : Color.FromRgb(58, 62, 70));
+            light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
         r["duhBuhAccent"] = new SolidColorBrush(
             light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 140, 205));
         r["duhBuhSectionText"] = new SolidColorBrush(
@@ -38,6 +38,8 @@ public static class DuhBuhUITheme
         r["duhBuhDescriptionText"] = new SolidColorBrush(
             light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
+        // Only style controls that already exist. Never replace WPF templates and
+        // never modify TabControl/TabItem content.
         window.AddHandler(
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnElementLoaded));
@@ -48,15 +50,33 @@ public static class DuhBuhUITheme
         FrameworkElement element = e.OriginalSource as FrameworkElement;
         if (element == null) return;
 
+        Window window = Window.GetWindow(element);
+        bool light = IsLightWindow(window);
+
+        TextBlock heading = element as TextBlock;
+        if (heading != null && heading.FontSize >= 17 && heading.FontWeight == FontWeights.SemiBold)
+        {
+            heading.Foreground = new SolidColorBrush(
+                light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
+            heading.Background = new SolidColorBrush(
+                light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
+            heading.Margin = new Thickness(0, 14, 0, 8);
+            heading.HorizontalAlignment = HorizontalAlignment.Stretch;
+            return;
+        }
+
         StackPanel panel = element as StackPanel;
         if (panel == null) return;
 
+        // FieldBox() creates the small panels that contain a setting's control and
+        // its description. Give those panels a subtle surface so settings read as
+        // individual cards without reparenting or templating any WPF controls.
         if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
         {
-            bool light = IsLightWindow(Window.GetWindow(panel));
             panel.Background = new SolidColorBrush(
-                light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(37, 40, 46));
-            panel.Margin = new Thickness(0, 0, 0, 10);
+                light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(32, 35, 41));
+            panel.Margin = new Thickness(0, 0, 0, 8);
+            return;
         }
     }
 
