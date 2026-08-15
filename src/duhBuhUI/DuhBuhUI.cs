@@ -82,24 +82,22 @@ public sealed class DuhBuhUI
 
     private StackPanel BuildHeader(string theme)
     {
-        string key = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage";
-        string headerImage = null;
-        if (_defaults.ContainsKey(key)) headerImage = Convert.ToString(_defaults[key], CultureInfo.InvariantCulture);
-        if (string.IsNullOrWhiteSpace(headerImage)) headerImage = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? DefaultLightHeader : DefaultDarkHeader;
-
+        string headerImage = Read(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage", "");
         StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
-        try
+        if (!string.IsNullOrWhiteSpace(headerImage))
         {
-            BitmapImage bitmap = new BitmapImage();
-            bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
-            Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
-            panel.Children.Add(image);
-            _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage);
-        }
-        catch (Exception ex)
-        {
-            _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message);
-            panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
+            try
+            {
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
+                Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
+                panel.Children.Add(image);
+            }
+            catch (Exception ex)
+            {
+                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + ex.Message);
+                panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
+            }
         }
         panel.Children.Add(new TextBlock { Text = _extensionName + "  •  v" + _extensionVersion, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) }); return panel;
     }
@@ -110,23 +108,76 @@ public sealed class DuhBuhUI
         for (int i = 0; i < _controls.Count; i++)
         {
             ControlDefinition d = _controls[i]; if (d.Category != category) continue;
-            if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }); panel.Children.Add(box); }
-            else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; Slider slider = new Slider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, IsSnapToTickEnabled = true, Tag = d.Key }; slider.ValueChanged += delegate(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e) { label.Text = d.Title + ": " + ((int)Math.Round(e.NewValue)); }; box.Children.Add(label); box.Children.Add(slider); panel.Children.Add(box); }
-            else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Add(new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
-            else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Add(combo); panel.Children.Add(box); }
-            else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; string current = Read(d.Key, (string)d.DefaultValue); for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Add(group); panel.Children.Add(box); }
+            if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }); panel.Children.Add(box); }
+            else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; Slider slider = new Slider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, IsSnapToTickEnabled = true, Tag = d.Key }; slider.ValueChanged += delegate(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e) { label.Text = d.Title + ": " + ((int)Math.Round(e.NewValue)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
+            else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
+            else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
+            else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; string current = Read(d.Key, (string)d.DefaultValue); for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); panel.Children.Add(box); }
             else if (d.Type == "color") BuildColorControl(panel, d, theme);
-            else if (d.Type == "date" || d.Type == "time" || d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Type == "date" || d.Type == "datetime") box.Children.Add(new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); if (d.Type == "time" || d.Type == "datetime") box.Children.Add(new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(current), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) }); panel.Children.Add(box); }
+            else if (d.Type == "date" || d.Type == "time" || d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Type == "date" || d.Type == "datetime") box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); if (d.Type == "time" || d.Type == "datetime") box.Children.Insert(2, new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(current), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) }); panel.Children.Add(box); }
         }
-        for (int i = 0; i < _buttons.Count; i++) { ButtonDefinition d = _buttons[i]; if (d.Category != category) continue; StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = d.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = d.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Add(button); panel.Children.Add(box); }
+        for (int i = 0; i < _buttons.Count; i++) { ButtonDefinition d = _buttons[i]; if (d.Category != category) continue; StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = d.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = d.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
     }
 
-    private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme) { StackPanel box = FieldBox(theme, d.Description); box.Children.Add(new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Tag = d.Key }; string current = Read(d.Key, (string)d.DefaultValue); Border swatch = new Border { Width = 42, Height = 30, Background = ColorBrush(current), BorderBrush = ThemeBrush(theme, "SecondaryText"), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 8, 0), Tag = "swatch" }; TextBox text = new TextBox { Text = NormalizeColor(current), Width = 120, Tag = d.Key, Margin = new Thickness(0, 0, 8, 0) }; Button choose = new Button { Content = "Choose...", Padding = new Thickness(10, 4, 10, 4) }; choose.Click += delegate { string chosen = ShowColorPicker(text.Text); if (!string.IsNullOrWhiteSpace(chosen)) { text.Text = chosen; swatch.Background = ColorBrush(chosen); } }; row.Children.Add(swatch); row.Children.Add(text); row.Children.Add(choose); box.Children.Add(row); panel.Children.Add(box); }
-    private StackPanel FieldBox(string theme, string description) { StackPanel box = new StackPanel { Margin = new Thickness(0, 0, 0, 10) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4) }); return box; }
+    private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme)
+    {
+        StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+        string current = NormalizeColor(Read(d.Key, (string)d.DefaultValue)); if (current == "") current = "#FFFFFFFF";
+        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), Tag = d.Key };
+        Button swatch = new Button { Width = 42, Height = 30, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key, ToolTip = "Click to choose a colour" };
+        TextBox hex = new TextBox { Text = current, Width = 120, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key };
+        Button choose = new Button { Content = "Choose…", Padding = new Thickness(10, 4, 10, 4), Tag = d.Key }; SetSwatch(swatch, current);
+        swatch.Click += delegate { OpenColorPicker(hex, swatch, theme); }; choose.Click += delegate { OpenColorPicker(hex, swatch, theme); }; hex.LostFocus += delegate { string c = NormalizeColor(hex.Text); if (c != "") { hex.Text = c; SetSwatch(swatch, c); } };
+        row.Children.Add(swatch); row.Children.Add(hex); row.Children.Add(choose); box.Children.Insert(1, row); box.Children.Insert(2, new TextBlock { Text = "Use the swatch or enter #RRGGBB / #AARRGGBB", Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 2, 0, 0) }); panel.Children.Add(box);
+    }
 
-    private Brush ColorBrush(string value) { try { string hex = NormalizeColor(value); if (hex.Length == 9) { byte a = byte.Parse(hex.Substring(1, 2), NumberStyles.HexNumber); byte r = byte.Parse(hex.Substring(3, 2), NumberStyles.HexNumber); byte g = byte.Parse(hex.Substring(5, 2), NumberStyles.HexNumber); byte b = byte.Parse(hex.Substring(7, 2), NumberStyles.HexNumber); return new SolidColorBrush(Color.FromArgb(a, r, g, b)); } byte rr = byte.Parse(hex.Substring(1, 2), NumberStyles.HexNumber); byte gg = byte.Parse(hex.Substring(3, 2), NumberStyles.HexNumber); byte bb = byte.Parse(hex.Substring(5, 2), NumberStyles.HexNumber); return new SolidColorBrush(Color.FromRgb(rr, gg, bb)); } catch { return Brushes.Transparent; } }
-    private string NormalizeColor(string value) { if (string.IsNullOrWhiteSpace(value)) return "#FFFFFFFF"; string s = value.Trim(); if (!s.StartsWith("#")) s = "#" + s; if (s.Length == 7 || s.Length == 9) { for (int i = 1; i < s.Length; i++) if (!Uri.IsHexDigit(s[i])) return "#FFFFFFFF"; return s.ToUpperInvariant(); } return "#FFFFFFFF"; }
-    private string ShowColorPicker(string initial) { return initial; }
+    private StackPanel FieldBox(string theme, string description)
+    {
+        StackPanel box = new StackPanel { Margin = new Thickness(0, 4, 0, 14) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 3, 0, 0) }); return box;
+    }
+
+    private void OpenColorPicker(TextBox target, Button swatch, string theme)
+    {
+        string initial = NormalizeColor(target.Text); if (initial == "") initial = "#FFFFFFFF";
+        Window picker = new Window { Title = "Choose Colour", Width = 520, Height = 480, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = ThemeBrush(theme, "WindowBackground") };
+        StackPanel root = new StackPanel { Margin = new Thickness(18) };
+        root.Children.Add(new TextBlock { Text = "Choose a notification colour", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 0, 0, 10) });
+        Border preview = new Border { Height = 46, CornerRadius = new System.Windows.CornerRadius(4), Margin = new Thickness(0, 0, 0, 12), BorderBrush = ThemeBrush(theme, "SecondaryText"), BorderThickness = new Thickness(1) };
+        TextBlock previewText = new TextBlock { Text = initial, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, FontWeight = FontWeights.Bold }; preview.Child = previewText; SetPreview(preview, previewText, initial); root.Children.Add(preview);
+
+        TextBox custom = null;
+        WrapPanel palette = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 12) };
+        string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C757D" };
+        for (int i = 0; i < colours.Length; i++)
+        {
+            string colour = colours[i]; Button swatchButton = new Button { Width = 38, Height = 32, Margin = new Thickness(3), Tag = colour, ToolTip = colour, Padding = new Thickness(0) }; swatchButton.Background = BrushFromHex(colour); swatchButton.BorderBrush = ThemeBrush(theme, "SecondaryText");
+            swatchButton.Click += delegate(object sender, RoutedEventArgs e) { string selected = (string)((Button)sender).Tag; custom.Text = selected; SetPreview(preview, previewText, selected); };
+            palette.Children.Add(swatchButton);
+        }
+        root.Children.Add(palette);
+
+        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+        custom = new TextBox { Text = initial, Width = 150, VerticalContentAlignment = VerticalAlignment.Center };
+        Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) };
+        customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
+        custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
+        applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
+
+        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) };
+        ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); };
+        buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
+    }
+
+    private void SetPreview(Border preview, TextBlock text, string colour)
+    {
+        preview.Background = BrushFromHex(colour); text.Text = colour; Color c; try { c = (Color)ColorConverter.ConvertFromString(colour); } catch { c = Colors.White; } double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0; text.Foreground = luminance > 0.6 ? Brushes.Black : Brushes.White;
+    }
+    private void SetSwatch(Button button, string value) { button.Background = BrushFromHex(value); button.BorderBrush = new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)); }
+    private Brush BrushFromHex(string value) { try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(NormalizeColor(value))); } catch { return Brushes.Transparent; } }
+    private string NormalizeColor(string value) { if (string.IsNullOrWhiteSpace(value)) return ""; string v = value.Trim(); if (!v.StartsWith("#", StringComparison.Ordinal)) v = "#" + v; if (v.Length == 7) return "#FF" + v.Substring(1).ToUpperInvariant(); if (v.Length == 9) return "#" + v.Substring(1).ToUpperInvariant(); return ""; }
+    private void RegisterCategory(string category) { if (string.IsNullOrEmpty(category)) category = "General"; if (!_categories.Contains(category)) _categories.Add(category); }
 
     private Brush ThemeBrush(string theme, string role)
     {
@@ -138,7 +189,7 @@ public sealed class DuhBuhUI
     private object ReadObject(string key, object fallback) { try { object value = _getObject(key, true); return value ?? fallback; } catch { return fallback; } }
     private bool Read(string key, bool fallback) { try { bool? value = _getBool(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
     private int Read(string key, int fallback) { try { int? value = _getInt(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
-    private string Read(string key, string fallback) { try { string value = _getString(key, true); return string.IsNullOrEmpty(value) ? fallback : value; } catch { return fallback; } }
+    private string Read(string key, string fallback) { try { string value = _getString(key, true); return value ?? fallback; } catch { return fallback; } }
 
     private void Save(DockPanel root)
     {
