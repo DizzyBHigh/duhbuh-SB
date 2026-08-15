@@ -1,5 +1,5 @@
 // duhBuhUITheme - safe visual styling for the shared settings UI.
-// IMPORTANT: Do not replace TabControl/TabItem templates or modify generated tab content.
+// IMPORTANT: Do not replace TabControl/TabItem templates or modify generated tab templates.
 
 using System;
 using System.Windows;
@@ -26,6 +26,7 @@ public static class DuhBuhUITheme
         Window window = sender as Window;
         if (window == null) return;
         if (window.Title == null || window.Title.IndexOf("Settings", StringComparison.OrdinalIgnoreCase) < 0) return;
+
         Apply(window, IsLightWindow(window));
     }
 
@@ -47,48 +48,116 @@ public static class DuhBuhUITheme
         r["duhBuhSectionText"] = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = new SolidColorBrush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        window.AddHandler(FrameworkElement.LoadedEvent, new RoutedEventHandler(OnElementLoaded));
+        // Existing controls have already been created by DuhBuhUI by the time
+        // the Window Loaded event reaches this handler. Defer one dispatcher
+        // turn so the generated tab content is present before we group it.
+        window.Dispatcher.BeginInvoke(new Action(delegate
+        {
+            ApplySectionCards(window, light);
+        }));
     }
 
-    private static void OnElementLoaded(object sender, RoutedEventArgs e)
+    private static void ApplySectionCards(Window window, bool light)
     {
-        FrameworkElement element = e.OriginalSource as FrameworkElement;
-        if (element == null) return;
-        Window window = Window.GetWindow(element);
-        if (window == null) return;
-        bool light = IsLightWindow(window);
+        TabControl tabs = FindTabControl(window);
+        if (tabs == null) return;
 
-        TextBlock heading = element as TextBlock;
-        if (heading != null && heading.FontSize >= 17 && heading.FontWeight == FontWeights.SemiBold)
+        for (int i = 0; i < tabs.Items.Count; i++)
         {
+            TabItem tab = tabs.Items[i] as TabItem;
+            if (tab == null) continue;
+
+            ScrollViewer scroll = tab.Content as ScrollViewer;
+            if (scroll == null) continue;
+
+            StackPanel category = scroll.Content as StackPanel;
+            if (category == null) continue;
+
+            ApplyCardsToCategory(category, light);
+        }
+    }
+
+    private static TabControl FindTabControl(DependencyObject parent)
+    {
+        if (parent == null) return null;
+        TabControl direct = parent as TabControl;
+        if (direct != null) return direct;
+
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            TabControl found = FindTabControl(VisualTreeHelper.GetChild(parent, i));
+            if (found != null) return found;
+        }
+
+        return null;
+    }
+
+    private static void ApplyCardsToCategory(StackPanel category, bool light)
+    {
+        // Do not process a category twice.
+        if (category.Tag is string && (string)category.Tag == "__duhbuh_cards_applied") return;
+        category.Tag = "__duhbuh_cards_applied";
+
+        int index = 0;
+        while (index < category.Children.Count)
+        {
+            TextBlock heading = category.Children[index] as TextBlock;
+            if (!IsSectionHeading(heading))
+            {
+                index++;
+                continue;
+            }
+
+            int nextHeading = index + 1;
+            while (nextHeading < category.Children.Count)
+            {
+                TextBlock candidate = category.Children[nextHeading] as TextBlock;
+                if (IsSectionHeading(candidate)) break;
+                nextHeading++;
+            }
+
+            category.Children.RemoveAt(index);
+
+            StackPanel content = new StackPanel();
+            content.Children.Add(heading);
+
+            StackPanel fields = new StackPanel();
+            while (index < nextHeading - 1 && index < category.Children.Count)
+            {
+                UIElement child = category.Children[index];
+                category.Children.RemoveAt(index);
+                fields.Children.Add(child);
+                nextHeading--;
+            }
+
+            content.Children.Add(fields);
+
+            Border card = new Border
+            {
+                Background = new SolidColorBrush(light ? Color.FromRgb(252, 253, 255) : Color.FromRgb(39, 42, 48)),
+                BorderBrush = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14, 8, 14, 10),
+                Margin = new Thickness(0, 0, 0, 14),
+                Child = content
+            };
+
             heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
             heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
-            heading.Padding = new Thickness(10, 6, 10, 6);
-            heading.Margin = new Thickness(0, 12, 0, 8);
+            heading.Padding = new Thickness(10, 7, 10, 7);
+            heading.Margin = new Thickness(0, 0, 0, 10);
             heading.HorizontalAlignment = HorizontalAlignment.Stretch;
-            return;
-        }
 
-        StackPanel panel = element as StackPanel;
-        if (panel == null) return;
-        if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
-        {
-            panel.Background = new SolidColorBrush(light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(39, 42, 48));
-            panel.Margin = new Thickness(0, 2, 0, 10);
+            category.Children.Insert(index, card);
+            index++;
         }
     }
 
-    private static bool IsFieldPanel(StackPanel panel)
+    private static bool IsSectionHeading(TextBlock text)
     {
-        bool hasText = false;
-        bool hasControl = false;
-        for (int i = 0; i < panel.Children.Count; i++)
-        {
-            UIElement child = panel.Children[i];
-            if (child is TextBlock) hasText = true;
-            if (child is Control || child is StackPanel) hasControl = true;
-        }
-        return hasText && hasControl;
+        return text != null && text.FontSize >= 17 && text.FontWeight == FontWeights.SemiBold;
     }
 
     private static bool IsLightWindow(Window window)
