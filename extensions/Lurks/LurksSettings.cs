@@ -23,6 +23,8 @@ public class CPHInline
             message => CPH.LogInfo(message)
         );
 
+        // Settings UI branding. The shared UI selects the dark/light asset from the current theme.
+        ui.AddHeader("RTS");
         ui.AddThemeSelector("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", "Dark");
 
         ui.AddTitle("General Settings", "General");
@@ -48,11 +50,7 @@ public class CPHInline
 
         ui.AddTitle("Position & Queue", "Overlay - Lurks");
         ui.AddToggleSwitch("Enable Lurk Notifications", "Show voluntary !lurk and !unlurk notifications. Automatic unpresent-lurker removal remains silent.", "Overlay - Lurks", "duhbuh_overlay_lurks_enabled", true);
-        ui.AddDropdown("Position", "Where the Lurk lane is anchored.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", new[] {
-            "top-left", "top-center", "top-right",
-            "middle-left", "center", "middle-right",
-            "bottom-left", "bottom-center", "bottom-right"
-        }, "bottom-center");
+        ui.AddDropdown("Position", "Where the Lurk lane is anchored.", "Overlay - Lurks", "duhbuh_overlay_lurks_position", new[] { "top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right" }, "bottom-center");
         ui.AddSlider("Horizontal Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetX", 0, 1000, 0);
         ui.AddSlider("Vertical Offset", "Pixel inset from the selected anchor.", "Overlay - Lurks", "duhbuh_overlay_lurks_offsetY", 0, 1000, 0);
         ui.AddSlider("Maximum Visible", "Maximum number of Lurk notifications visible at once.", "Overlay - Lurks", "duhbuh_overlay_lurks_maxVisible", 1, 10, 3);
@@ -79,7 +77,7 @@ public class CPHInline
         ui.AddSlider("Border Radius (px)", "Corner radius of the notification.", "Overlay - Lurks", "duhbuh_overlay_lurks_borderRadius", 0, 50, 12);
         ui.AddSlider("Title Size (px)", "Title font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_titleSize", 10, 72, 24);
         ui.AddSlider("Message Size (px)", "Main message font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_messageSize", 8, 60, 18);
-        ui.AddSlider("Meta Size (px)", "Meta font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_metaSize", 8, 40, 13);
+        ui.AddSlider("Meta Size (px)", "Meta font size.", "Overlay - Lurks", "duhbuh_overlay_lurks_messageSize", 8, 40, 13);
 
         ui.AddTitle("Translations", "Translations");
         ui.AddTextbox("second/seconds", "Singular/plural separated with '/'.", "Translations", "duhbuh_lurks_translationSeconds", "second/seconds", false);
