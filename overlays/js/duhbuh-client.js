@@ -32,13 +32,13 @@
 
   function toCssColor(value, opacityOverride) {
     const hex=String(value||'').trim().replace(/^#/,'');
+    const opacity=opacityOverride===undefined ? 1 : Math.max(0,Math.min(1,opacityOverride));
     if (/^[0-9a-fA-F]{8}$/.test(hex)) {
       const a=parseInt(hex.slice(0,2),16)/255, rgb=hex.slice(2);
-      return `rgba(${parseInt(rgb.slice(0,2),16)},${parseInt(rgb.slice(2,4),16)},${parseInt(rgb.slice(4,6),16)},${Math.max(0,Math.min(1,a*opacityOverride))})`;
+      return `rgba(${parseInt(rgb.slice(0,2),16)},${parseInt(rgb.slice(2,4),16)},${parseInt(rgb.slice(4,6),16)},${Math.max(0,Math.min(1,a*opacity))})`;
     }
     if (/^[0-9a-fA-F]{6}$/.test(hex)) {
-      const a=opacityOverride===undefined?1:Math.max(0,Math.min(1,opacityOverride));
-      return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${a})`;
+      return `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},${opacity})`;
     }
     return value||'#ffffff';
   }
