@@ -38,7 +38,7 @@ public static class DuhBuhUITheme
         r[typeof(RadioButton)] = CreateRadioButtonStyle(light);
         r["duhBuhSectionBackground"] = new SolidColorBrush(light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
         r["duhBuhSectionBorder"] = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
-        r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 140, 205));
+        r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52));
         r["duhBuhSectionText"] = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = new SolidColorBrush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
         window.Dispatcher.BeginInvoke(new Action(delegate { ApplySectionCards(window, light); }));
@@ -91,7 +91,6 @@ public static class DuhBuhUITheme
         category.Tag = "__duhbuh_cards_applied";
         category.Children.Clear();
 
-        Border currentCard = null;
         StackPanel currentContent = null;
         bool sawFirstHeading = false;
 
@@ -104,22 +103,27 @@ public static class DuhBuhUITheme
             {
                 sawFirstHeading = true;
                 currentContent = new StackPanel();
-                currentCard = CreateCard(currentContent, light);
+                Border currentCard = CreateCard(currentContent, light);
+
+                Border accent = new Border
+                {
+                    Height = 3,
+                    Background = new SolidColorBrush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52)),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+                currentContent.Children.Add(accent);
 
                 heading.Foreground = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
                 heading.Background = new SolidColorBrush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
                 heading.Padding = new Thickness(10, 7, 10, 7);
                 heading.Margin = new Thickness(0, 0, 0, 10);
                 heading.HorizontalAlignment = HorizontalAlignment.Stretch;
-
                 currentContent.Children.Add(heading);
                 category.Children.Add(currentCard);
                 continue;
             }
 
-            // Everything before the first section heading stays outside the cards.
-            // Everything after a heading belongs to the most recent heading until
-            // another heading starts the next card.
             if (sawFirstHeading && currentContent != null)
                 currentContent.Children.Add(child);
             else
@@ -166,6 +170,8 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 7, 14, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
+        style.Setters.Add(new Setter(Control.MinHeightProperty, 34.0));
+        style.Setters.Add(new Setter(Control.MinWidthProperty, 72.0));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         return style;
