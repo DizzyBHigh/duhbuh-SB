@@ -203,6 +203,7 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(7, 4, 7, 4)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
+        style.Setters.Add(new Setter(ItemsControl.ItemContainerStyleProperty, CreateComboBoxItemStyle(light)));
         return style;
     }
 
@@ -210,7 +211,7 @@ public static class DuhBuhUITheme
     {
         Color normalBackground = light ? Colors.White : Color.FromRgb(45, 48, 55);
         Color normalForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
-        Color selectedBackground = light ? Color.FromRgb(224, 166, 52) : Color.FromRgb(224, 166, 52);
+        Color selectedBackground = Color.FromRgb(224, 166, 52);
         Color selectedForeground = Colors.Black;
 
         Style style = new Style(typeof(ComboBoxItem));
