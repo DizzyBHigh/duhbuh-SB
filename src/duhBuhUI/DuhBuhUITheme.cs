@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
 public static class DuhBuhUITheme
@@ -193,9 +194,11 @@ public static class DuhBuhUITheme
 
     private static Style CreateComboBoxStyle(bool light)
     {
+        Color background = light ? Colors.White : Color.FromRgb(45, 48, 55);
+        Color foreground = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
         Style style = new Style(typeof(ComboBox));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(background)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(foreground)));
         style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(7, 4, 7, 4)));
@@ -205,11 +208,26 @@ public static class DuhBuhUITheme
 
     private static Style CreateComboBoxItemStyle(bool light)
     {
+        Color normalBackground = light ? Colors.White : Color.FromRgb(45, 48, 55);
+        Color normalForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
+        Color selectedBackground = light ? Color.FromRgb(224, 166, 52) : Color.FromRgb(224, 166, 52);
+        Color selectedForeground = Colors.Black;
+
         Style style = new Style(typeof(ComboBoxItem));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(normalBackground)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(normalForeground)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+
+        Trigger selected = new Trigger
+        {
+            Property = Selector.IsSelectedProperty,
+            Value = true
+        };
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(selectedBackground)));
+        selected.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(selectedForeground)));
+        style.Triggers.Add(selected);
+
         return style;
     }
 
@@ -242,15 +260,33 @@ public static class DuhBuhUITheme
 
     private static Style CreateTabItemStyle(bool light)
     {
+        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(45, 48, 55);
+        Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220);
+        Color selectedBackground = light ? Colors.White : Color.FromRgb(39, 42, 48);
+        Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(245, 247, 250);
+        Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
+
         Style style = new Style(typeof(TabItem));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(normalBackground)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(normalForeground)));
         style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80))));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 1, 1, 0)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 7, 12, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(2, 0, 2, 0)));
         style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         style.Setters.Add(new Setter(Control.MinHeightProperty, 32.0));
+
+        Trigger selected = new Trigger
+        {
+            Property = Selector.IsSelectedProperty,
+            Value = true
+        };
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(selectedBackground)));
+        selected.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(selectedForeground)));
+        selected.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(accent)));
+        selected.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 2, 1, 0)));
+        style.Triggers.Add(selected);
+
         return style;
     }
 }
