@@ -33,9 +33,11 @@ public static class DuhBuhUITheme
         r[typeof(Button)] = CreateButtonStyle(light);
         r[typeof(TextBox)] = CreateTextBoxStyle(light);
         r[typeof(ComboBox)] = CreateComboBoxStyle(light);
+        r[typeof(ComboBoxItem)] = CreateComboBoxItemStyle(light);
         r[typeof(DatePicker)] = CreateDatePickerStyle(light);
         r[typeof(CheckBox)] = CreateCheckBoxStyle(light);
         r[typeof(RadioButton)] = CreateRadioButtonStyle(light);
+        r[typeof(TabItem)] = CreateTabItemStyle(light);
         r["duhBuhSectionBackground"] = new SolidColorBrush(light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(32, 35, 41));
         r["duhBuhSectionBorder"] = new SolidColorBrush(light ? Color.FromRgb(218, 222, 230) : Color.FromRgb(60, 65, 74));
         r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52));
@@ -170,8 +172,8 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 7, 14, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
-        style.Setters.Add(new Setter(Control.MinHeightProperty, 34.0));
-        style.Setters.Add(new Setter(Control.MinWidthProperty, 72.0));
+        style.Setters.Add(new Setter(Control.WidthProperty, 96.0));
+        style.Setters.Add(new Setter(Control.HeightProperty, 36.0));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         return style;
@@ -201,6 +203,16 @@ public static class DuhBuhUITheme
         return style;
     }
 
+    private static Style CreateComboBoxItemStyle(bool light)
+    {
+        Style style = new Style(typeof(ComboBoxItem));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247))));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+        return style;
+    }
+
     private static Style CreateDatePickerStyle(bool light)
     {
         Style style = new Style(typeof(DatePicker));
@@ -225,6 +237,20 @@ public static class DuhBuhUITheme
         Style style = new Style(typeof(RadioButton));
         style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243))));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0, 3, 0, 3)));
+        return style;
+    }
+
+    private static Style CreateTabItemStyle(bool light)
+    {
+        Style style = new Style(typeof(TabItem));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80))));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 1, 1, 0)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 7, 12, 7)));
+        style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(2, 0, 2, 0)));
+        style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+        style.Setters.Add(new Setter(Control.MinHeightProperty, 32.0));
         return style;
     }
 }
