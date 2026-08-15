@@ -1,6 +1,5 @@
 // duhBuhUIBannerAssets - local branding asset resolver for the settings UI.
-// Keep the PNGs in: overlays/assets/RTS Dark Banner.png and RTS Light Banner.png
-// This file is intentionally small; the image files are NOT embedded in C#.
+// The banner PNGs are runtime assets, not embedded in C#.
 
 using System;
 using System.IO;
@@ -17,15 +16,25 @@ public static class DuhBuhUIBannerAssets
     {
         string root = Environment.GetEnvironmentVariable("DUHBUH_SB_ROOT");
         string path = FindFrom(root, fileName);
-        if (!string.IsNullOrEmpty(path)) return new Uri(path).AbsoluteUri;
+        if (!string.IsNullOrEmpty(path)) return ToFileUri(path);
+
+        // Known local checkout used during development.
+        path = FindFrom(@"F:\Projects\duhbuh-SB", fileName);
+        if (!string.IsNullOrEmpty(path)) return ToFileUri(path);
 
         path = FindFrom(Environment.CurrentDirectory, fileName);
-        if (!string.IsNullOrEmpty(path)) return new Uri(path).AbsoluteUri;
+        if (!string.IsNullOrEmpty(path)) return ToFileUri(path);
 
         path = FindFrom(AppDomain.CurrentDomain.BaseDirectory, fileName);
-        if (!string.IsNullOrEmpty(path)) return new Uri(path).AbsoluteUri;
+        if (!string.IsNullOrEmpty(path)) return ToFileUri(path);
 
-        return "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/" + Uri.EscapeDataString(fileName).Replace("%20", "%20");
+        // Last resort. This only works once the PNGs have been committed to GitHub.
+        return "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/" + Uri.EscapeDataString(fileName);
+    }
+
+    private static string ToFileUri(string path)
+    {
+        return new Uri(Path.GetFullPath(path), UriKind.Absolute).AbsoluteUri;
     }
 
     private static string FindFrom(string start, string fileName)
