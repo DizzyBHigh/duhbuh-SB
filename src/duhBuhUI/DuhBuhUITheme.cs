@@ -9,6 +9,15 @@ using System.Windows.Media;
 
 public static class DuhBuhUITheme
 {
+    private static bool _initialized;
+
+    // Compatibility entry point used by DuhBuhUI before the window is built.
+    // Actual styles are applied to the individual window via Apply().
+    public static void Initialize()
+    {
+        _initialized = true;
+    }
+
     public static void Apply(Window window, bool light)
     {
         if (window == null) return;
@@ -19,7 +28,6 @@ public static class DuhBuhUITheme
         r[typeof(ComboBox)] = CreateComboBoxStyle(light);
         r[typeof(DatePicker)] = CreateDatePickerStyle(light);
 
-        // Safe, non-template styling for the surfaces used by the settings UI.
         r["duhBuhSectionBackground"] = new SolidColorBrush(
             light ? Color.FromRgb(247, 248, 250) : Color.FromRgb(37, 40, 46));
         r["duhBuhSectionBorder"] = new SolidColorBrush(
