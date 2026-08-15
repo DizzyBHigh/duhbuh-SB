@@ -11,6 +11,7 @@ using System.Windows.Media;
 public static class DuhBuhUITheme
 {
     private static bool _initialized;
+    private static readonly HashSet<ComboBox> _styledComboBoxes = new HashSet<ComboBox>();
 
     public static void Initialize()
     {
@@ -44,7 +45,64 @@ public static class DuhBuhUITheme
         r["duhBuhAccent"] = new SolidColorBrush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52));
         r["duhBuhSectionText"] = new SolidColorBrush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = new SolidColorBrush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
-        window.Dispatcher.BeginInvoke(new Action(delegate { ApplySectionCards(window, light); }));
+        window.Dispatcher.BeginInvoke(new Action(delegate
+        {
+            ApplySectionCards(window, light);
+            ApplyComboBoxSelectionFixes(window, light);
+        }));
+    }
+
+    private static void ApplyComboBoxSelectionFixes(Window window, bool light)
+    {
+        ApplyComboBoxSelectionFixesToTree(window, light);
+    }
+
+    private static void ApplyComboBoxSelectionFixesToTree(DependencyObject node, bool light)
+    {
+        if (node == null) return;
+
+        ComboBox combo = node as ComboBox;
+        if (combo != null)
+        {
+            if (!_styledComboBoxes.Contains(combo))
+            {
+                _styledComboBoxes.Add(combo);
+                combo.SelectionChanged += delegate { QueueComboBoxRestyle(combo, light); };
+                combo.DropDownOpened += delegate { QueueComboBoxRestyle(combo, light); };
+                combo.Loaded += delegate { QueueComboBoxRestyle(combo, light); };
+            }
+            QueueComboBoxRestyle(combo, light);
+        }
+
+        int count = VisualTreeHelper.GetChildrenCount(node);
+        for (int i = 0; i < count; i++)
+            ApplyComboBoxSelectionFixesToTree(VisualTreeHelper.GetChild(node, i), light);
+    }
+
+    private static void QueueComboBoxRestyle(ComboBox combo, bool light)
+    {
+        if (combo == null) return;
+        RestyleComboBoxItems(combo, light);
+        combo.Dispatcher.BeginInvoke(new Action(delegate { RestyleComboBoxItems(combo, light); }));
+    }
+
+    private static void RestyleComboBoxItems(ComboBox combo, bool light)
+    {
+        if (combo == null) return;
+
+        Color normalBackground = light ? Colors.White : Color.FromRgb(45, 48, 55);
+        Color normalForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
+        Color selectedBackground = Color.FromRgb(224, 166, 52);
+        Color selectedForeground = Colors.Black;
+
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            ComboBoxItem item = combo.ItemContainerGenerator.ContainerFromIndex(i) as ComboBoxItem;
+            if (item == null) continue;
+            bool selected = item.IsSelected;
+            item.Background = new SolidColorBrush(selected ? selectedBackground : normalBackground);
+            item.Foreground = new SolidColorBrush(selected ? selectedForeground : normalForeground);
+        }
     }
 
     private static void ApplySectionCards(Window window, bool light)
