@@ -27,36 +27,39 @@
     }, duration);
   }
 
-  window.duhBuhOverlay = { notify: showNotification };
-
-  // Streamer.bot's official client automatically subscribes when .on() is used.
-  // The overlay only listens for our namespaced Custom.Event payloads.
-  const client = new StreamerbotClient({
-    host: '127.0.0.1',
-    port: 8080,
-    endpoint: '/'
-  });
-
-  client.on('General.Custom', ({ event, data }) => {
-    console.log('[duhBuh Overlay] General.Custom received:', event, data);
-
-    const payload = data?.data || data;
-
+  function handleOverlayPayload(payload) {
     if (!payload || payload.eventName !== 'duhbuh.overlay') return;
-
     const args = payload.args || {};
-
     showNotification({
       title: args.title || 'duhBuh',
       message: args.message || '',
       meta: args.meta || '',
       duration: args.duration || 5000
     });
-  });;
+  }
+
+  window.duhBuhOverlay = { notify: showNotification };
+
+  const client = new StreamerbotClient({
+    host: '127.0.0.1',
+    port: 8080,
+    endpoint: '/'
+  });
+
+  // Current duhBuh overlay transport.
+  client.on('General.Custom', ({ event, data }) => {
+    console.log('[duhBuh Overlay] General.Custom received:', event, data);
+    handleOverlayPayload(data?.data || data);
+  });
+
+  // Backwards-compatible transport for the existing Lurks broadcast envelope.
+  client.on('Custom.Event', ({ event, data }) => {
+    console.log('[duhBuh Overlay] Custom.Event received:', event, data);
+    handleOverlayPayload(data?.data || data);
+  });
 
   console.info('[duhBuh Overlay] Connected to Streamer.bot WebSocket client.');
 
-  // Development/test hook.
   const params = new URLSearchParams(location.search);
   if (params.get('test') === '1') {
     showNotification({
