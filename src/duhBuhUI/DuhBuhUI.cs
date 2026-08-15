@@ -171,7 +171,7 @@ public sealed class DuhBuhUI
     public void ShowUI()
     {
         Exception threadError = null;
-        Thread uiThread = new Thread(delegate
+        Thread uiThread = new Thread((ThreadStart)delegate
         {
             try
             {
@@ -440,8 +440,7 @@ public sealed class DuhBuhUI
             {
                 string selected = (string)((Button)sender).Tag;
                 SetPreview(preview, previewText, selected);
-                target.Text = selected;
-                SetSwatch(swatch, selected);
+                custom.Text = selected;
             };
             palette.Children.Add(swatchButton);
         }
@@ -464,13 +463,20 @@ public sealed class DuhBuhUI
         applyCustom.Click += delegate
         {
             string c = NormalizeColor(custom.Text);
-            if (c != "") { target.Text = c; SetSwatch(swatch, c); SetPreview(preview, previewText, c); }
+            if (c != "") SetPreview(preview, previewText, c);
         };
 
         StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) };
         Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) };
-        ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = NormalizeColor(target.Text); target.Text = c; SetSwatch(swatch, c); picker.Close(); };
+        ok.Click += delegate
+        {
+            string c = NormalizeColor(custom.Text);
+            if (c == "") c = initial;
+            target.Text = c;
+            SetSwatch(swatch, c);
+            picker.Close();
+        };
         cancel.Click += delegate { picker.Close(); };
         buttons.Children.Add(ok);
         buttons.Children.Add(cancel);
