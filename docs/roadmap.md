@@ -5,8 +5,8 @@ The roadmap is intentionally feature-driven rather than a checklist of another p
 ## Foundation
 
 - [x] Repository initialized
-- [x] Shared settings/UI helpers
-- [x] Settings persistence conventions
+- [ ] Shared settings/UI helpers
+- [ ] Settings persistence conventions
 - [ ] Common logging helpers
 - [ ] Twitch helpers
 - [ ] YouTube helpers where useful
