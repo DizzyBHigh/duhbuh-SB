@@ -77,8 +77,6 @@ public sealed class DuhBuhUI
         _logInfo = logInfo;
     }
 
-    // The image is rendered as a top banner when supplied. A later DLL version can
-    // also expose a theme asset manager without changing extension settings code.
     public void AddHeader(string imageUrl)
     {
         RegisterCategory("__header");
@@ -452,12 +450,12 @@ public sealed class DuhBuhUI
                 if (d.Type == "date" || d.Type == "datetime")
                 {
                     date = new DatePicker { Tag = d.Key, SelectedDate = ParseDate(Read(d.Key, (string)d.DefaultValue)) };
-                    box.Insert(1, date);
+                    box.Children.Insert(1, date);
                 }
                 if (d.Type == "time" || d.Type == "datetime")
                 {
                     time = new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(Read(d.Key, (string)d.DefaultValue)), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) };
-                    box.Insert(2, time);
+                    box.Children.Insert(2, time);
                 }
                 panel.Children.Add(box);
             }
