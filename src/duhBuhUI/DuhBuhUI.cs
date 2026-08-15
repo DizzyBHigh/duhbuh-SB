@@ -8,6 +8,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 public sealed class DuhBuhUI
 {
@@ -25,6 +26,9 @@ public sealed class DuhBuhUI
     private readonly List<string> _categories = new List<string>();
     private readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
 
+    private const string DefaultDarkHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
+    private const string DefaultLightHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
+
     private sealed class ControlDefinition
     {
         public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options;
@@ -35,8 +39,12 @@ public sealed class DuhBuhUI
     public DuhBuhUI(string extensionName, string extensionVersion, Func<string, bool, bool?> getBool, Func<string, bool, int?> getInt, Func<string, bool, string> getString, Func<string, bool, object> getObject, Action<string, object, bool> setGlobal, Action<string> logInfo)
     {
         _extensionName = extensionName ?? "duhBuh"; _extensionVersion = extensionVersion ?? "0.1.0"; _getBool = getBool; _getInt = getInt; _getString = getString; _getObject = getObject; _setGlobal = setGlobal; _logInfo = logInfo;
+        _defaults["__duhbuh_headerDarkImage"] = DefaultDarkHeader;
+        _defaults["__duhbuh_headerLightImage"] = DefaultLightHeader;
     }
-    public void AddHeader(string imageUrl) { RegisterCategory("__header"); _defaults["__duhbuh_headerImage"] = imageUrl ?? ""; }
+
+    public void AddHeader(string imageUrl) { AddHeader(imageUrl, imageUrl); }
+    public void AddHeader(string darkImageUrl, string lightImageUrl) { RegisterCategory("__header"); _defaults["__duhbuh_headerDarkImage"] = darkImageUrl ?? ""; _defaults["__duhbuh_headerLightImage"] = lightImageUrl ?? ""; }
     public void AddThemeSelector(string title, string description, string category, string variableName, string defaultValue) { AddDropdown(title, description, category, variableName, new[] { "Dark", "Light", "System" }, defaultValue); }
     public void AddRadioGroup(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "radio", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0] }); }
     public void AddDropdown(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "dropdown", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0] }); }
@@ -62,7 +70,7 @@ public sealed class DuhBuhUI
     private Window BuildWindow()
     {
         string theme = Read("duhbuh_ui_theme", "Dark"); if (string.Equals(theme, "System", StringComparison.OrdinalIgnoreCase)) theme = "Dark";
-        Window window = new Window { Title = _extensionName + " - Settings", Width = 760, Height = 820, MinWidth = 600, MinHeight = 560, WindowStartupLocation = WindowStartupLocation.CenterScreen, Background = ThemeBrush(theme, "WindowBackground") };
+        Window window = new Window { Title = _extensionName + " - Settings", Width = 760, Height = 920, MinWidth = 600, MinHeight = 650, WindowStartupLocation = WindowStartupLocation.CenterScreen, Background = ThemeBrush(theme, "WindowBackground") };
         DockPanel root = new DockPanel(); StackPanel header = BuildHeader(theme); if (header != null) { DockPanel.SetDock(header, Dock.Top); root.Children.Add(header); }
         StackPanel footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12) };
         Button save = new Button { Content = "Save", Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(0, 0, 8, 0) }; Button close = new Button { Content = "Save & Exit", Padding = new Thickness(18, 7, 18, 7) };
@@ -74,8 +82,23 @@ public sealed class DuhBuhUI
 
     private StackPanel BuildHeader(string theme)
     {
-        string headerImage = Read("__duhbuh_headerImage", ""); StackPanel panel = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
-        if (!string.IsNullOrWhiteSpace(headerImage)) panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
+        string headerImage = Read(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase) ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage", "");
+        StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
+        if (!string.IsNullOrWhiteSpace(headerImage))
+        {
+            try
+            {
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
+                Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
+                panel.Children.Add(image);
+            }
+            catch (Exception ex)
+            {
+                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + ex.Message);
+                panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
+            }
+        }
         panel.Children.Add(new TextBlock { Text = _extensionName + "  •  v" + _extensionVersion, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) }); return panel;
     }
 
