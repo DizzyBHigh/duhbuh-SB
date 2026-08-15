@@ -25,16 +25,17 @@ public sealed class DuhBuhUI
     private readonly List<ButtonDefinition> _buttons = new List<ButtonDefinition>();
     private readonly List<string> _categories = new List<string>();
     private readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
+    private int _definitionOrder;
 
     private const string DefaultDarkHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
     private const string DefaultLightHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
 
     private sealed class ControlDefinition
     {
-        public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options;
+        public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options; public int Order;
     }
-    private sealed class TitleDefinition { public string Title; public string Category; }
-    private sealed class ButtonDefinition { public string Title; public string Description; public string ButtonText; public string Color; public string Category; public Action Callback; }
+    private sealed class TitleDefinition { public string Title; public string Category; public int Order; }
+    private sealed class ButtonDefinition { public string Title; public string Description; public string ButtonText; public string Color; public string Category; public Action Callback; public int Order; }
 
     public DuhBuhUI(string extensionName, string extensionVersion, Func<string, bool, bool?> getBool, Func<string, bool, int?> getInt, Func<string, bool, string> getString, Func<string, bool, object> getObject, Action<string, object, bool> setGlobal, Action<string> logInfo)
     {
@@ -46,17 +47,17 @@ public sealed class DuhBuhUI
     public void AddHeader(string imageUrl) { AddHeader(imageUrl, imageUrl); }
     public void AddHeader(string darkImageUrl, string lightImageUrl) { RegisterCategory("__header"); _defaults["__duhbuh_headerDarkImage"] = darkImageUrl ?? ""; _defaults["__duhbuh_headerLightImage"] = lightImageUrl ?? ""; }
     public void AddThemeSelector(string title, string description, string category, string variableName, string defaultValue) { AddDropdown(title, description, category, variableName, new[] { "Dark", "Light", "System" }, defaultValue); }
-    public void AddRadioGroup(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "radio", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0] }); }
-    public void AddDropdown(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "dropdown", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0] }); }
-    public void AddColorPicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = NormalizeColor(defaultValue) ?? "#FFFFFFFF"; _controls.Add(new ControlDefinition { Type = "color", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName] }); }
-    public void AddDatePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "date", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName] }); }
-    public void AddTimePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "time", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName] }); }
-    public void AddDateTimePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "datetime", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName] }); }
-    public void AddTitle(string title, string category) { RegisterCategory(category); _titles.Add(new TitleDefinition { Title = title, Category = category }); }
-    public void AddToggleSwitch(string title, string description, string category, string variableName, bool defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "toggle", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue }); }
-    public void AddSlider(string title, string description, string category, string variableName, int minimum, int maximum, int defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "slider", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Minimum = minimum, Maximum = maximum }); }
-    public void AddTextbox(string title, string description, string category, string variableName, string defaultValue, bool multiline) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "textbox", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Multiline = multiline }); }
-    public void AddClickableButton(string title, string description, string buttonText, string color, string category, Action callback) { RegisterCategory(category); _buttons.Add(new ButtonDefinition { Title = title, Description = description, ButtonText = buttonText, Color = color, Category = category, Callback = callback }); }
+    public void AddRadioGroup(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "radio", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0], Order = _definitionOrder++ }); }
+    public void AddDropdown(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "dropdown", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0], Order = _definitionOrder++ }); }
+    public void AddColorPicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = NormalizeColor(defaultValue) ?? "#FFFFFFFF"; _controls.Add(new ControlDefinition { Type = "color", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Order = _definitionOrder++ }); }
+    public void AddDatePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "date", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Order = _definitionOrder++ }); }
+    public void AddTimePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("HH:mm", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "time", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Order = _definitionOrder++ }); }
+    public void AddDateTimePicker(string title, string description, string category, string variableName, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture); _controls.Add(new ControlDefinition { Type = "datetime", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Order = _definitionOrder++ }); }
+    public void AddTitle(string title, string category) { RegisterCategory(category); _titles.Add(new TitleDefinition { Title = title, Category = category, Order = _definitionOrder++ }); }
+    public void AddToggleSwitch(string title, string description, string category, string variableName, bool defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "toggle", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Order = _definitionOrder++ }); }
+    public void AddSlider(string title, string description, string category, string variableName, int minimum, int maximum, int defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "slider", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Minimum = minimum, Maximum = maximum, Order = _definitionOrder++ }); }
+    public void AddTextbox(string title, string description, string category, string variableName, string defaultValue, bool multiline) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "textbox", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Multiline = multiline, Order = _definitionOrder++ }); }
+    public void AddClickableButton(string title, string description, string buttonText, string color, string category, Action callback) { RegisterCategory(category); _buttons.Add(new ButtonDefinition { Title = title, Description = description, ButtonText = buttonText, Color = color, Category = category, Callback = callback, Order = _definitionOrder++ }); }
     public void AddPopupWindow(string title, string message) { MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information); }
     public void LogExistingSettings() { foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; object value = ReadObject(item.Key, item.Value); _logInfo("[duhBuhUI] " + item.Key + " = " + Convert.ToString(value, CultureInfo.InvariantCulture)); } }
 
@@ -85,54 +86,46 @@ public sealed class DuhBuhUI
         string key = light ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage";
         string headerImage = "";
         object configured;
-        if (_defaults.TryGetValue(key, out configured) && configured != null)
-            headerImage = Convert.ToString(configured, CultureInfo.InvariantCulture);
-        try
-        {
-            string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri;
-            if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved;
-        }
-        catch (Exception ex)
-        {
-            _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message);
-        }
-
+        if (_defaults.TryGetValue(key, out configured) && configured != null) headerImage = Convert.ToString(configured, CultureInfo.InvariantCulture);
+        try { string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri; if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved; }
+        catch (Exception ex) { _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message); }
         _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage);
         StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
         if (!string.IsNullOrWhiteSpace(headerImage))
         {
-            try
-            {
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit();
-                Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) };
-                panel.Children.Add(image);
-                _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage);
-            }
-            catch (Exception ex)
-            {
-                _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message);
-                panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) });
-            }
+            try { BitmapImage bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit(); Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) }; panel.Children.Add(image); _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage); }
+            catch (Exception ex) { _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message); panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) }); }
         }
         panel.Children.Add(new TextBlock { Text = _extensionName + "  •  v" + _extensionVersion, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) }); return panel;
     }
 
     private void BuildCategory(StackPanel panel, string category, string theme)
     {
-        for (int i = 0; i < _titles.Count; i++) if (_titles[i].Category == category) panel.Children.Add(new TextBlock { Text = _titles[i].Title, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 10, 0, 12) });
-        for (int i = 0; i < _controls.Count; i++)
+        List<object> elements = new List<object>();
+        for (int i = 0; i < _titles.Count; i++) if (_titles[i].Category == category) elements.Add(_titles[i]);
+        for (int i = 0; i < _controls.Count; i++) if (_controls[i].Category == category) elements.Add(_controls[i]);
+        for (int i = 0; i < _buttons.Count; i++) if (_buttons[i].Category == category) elements.Add(_buttons[i]);
+        elements.Sort(delegate(object a, object b) { int ao = a is TitleDefinition ? ((TitleDefinition)a).Order : (a is ControlDefinition ? ((ControlDefinition)a).Order : ((ButtonDefinition)a).Order); int bo = b is TitleDefinition ? ((TitleDefinition)b).Order : (b is ControlDefinition ? ((ControlDefinition)b).Order : ((ButtonDefinition)b).Order); return ao.CompareTo(bo); });
+
+        for (int e = 0; e < elements.Count; e++)
         {
-            ControlDefinition d = _controls[i]; if (d.Category != category) continue;
-            if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }); panel.Children.Add(box); }
-            else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; Slider slider = new Slider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, IsSnapToTickEnabled = true, Tag = d.Key }; slider.ValueChanged += delegate(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e) { label.Text = d.Title + ": " + ((int)Math.Round(e.NewValue)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
-            else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
-            else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
-            else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; string current = Read(d.Key, (string)d.DefaultValue); for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); panel.Children.Add(box); }
-            else if (d.Type == "color") BuildColorControl(panel, d, theme);
-            else if (d.Type == "date" || d.Type == "time" || d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Type == "date" || d.Type == "datetime") box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); if (d.Type == "time" || d.Type == "datetime") box.Children.Insert(2, new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(current), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) }); panel.Children.Add(box); }
+            TitleDefinition title = elements[e] as TitleDefinition;
+            if (title != null) { panel.Children.Add(new TextBlock { Text = title.Title, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 10, 0, 12) }); continue; }
+            ControlDefinition d = elements[e] as ControlDefinition;
+            if (d != null)
+            {
+                if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }); panel.Children.Add(box); }
+                else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; Slider slider = new Slider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, IsSnapToTickEnabled = true, Tag = d.Key }; slider.ValueChanged += delegate(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> ev) { label.Text = d.Title + ": " + ((int)Math.Round(ev.NewValue)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
+                else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
+                else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
+                else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; string current = Read(d.Key, (string)d.DefaultValue); for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); panel.Children.Add(box); }
+                else if (d.Type == "color") BuildColorControl(panel, d, theme);
+                else if (d.Type == "date" || d.Type == "time" || d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Type == "date" || d.Type == "datetime") box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); if (d.Type == "time" || d.Type == "datetime") box.Children.Insert(2, new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(current), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) }); panel.Children.Add(box); }
+                continue;
+            }
+            ButtonDefinition buttonDefinition = elements[e] as ButtonDefinition;
+            if (buttonDefinition != null) { StackPanel box = FieldBox(theme, buttonDefinition.Description); box.Children.Insert(0, new TextBlock { Text = buttonDefinition.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = buttonDefinition.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = buttonDefinition.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
         }
-        for (int i = 0; i < _buttons.Count; i++) { ButtonDefinition d = _buttons[i]; if (d.Category != category) continue; StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = d.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = d.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
     }
 
     private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme)
