@@ -1,4 +1,4 @@
-// Paste this action into Streamer.bot after adding DuhBuhUI.cs to the same code action.
+// Paste this action into Streamer.bot after adding DuhBuhUI.cs and DuhBuhUIBannerAssets.cs to the same code action.
 // Lurks settings uses the shared duhBuhUI controls and persists overlay profile settings.
 
 using System;
@@ -23,8 +23,8 @@ public class CPHInline
             message => CPH.LogInfo(message)
         );
 
-        // Settings UI branding. The shared UI selects the dark/light asset from the current theme.
-        ui.AddHeader("RTS");
+        // Settings UI branding. Resolve the local repo assets; no image data is embedded in the C# source.
+        ui.AddHeader(DuhBuhUIBannerAssets.DarkUri, DuhBuhUIBannerAssets.LightUri);
         ui.AddThemeSelector("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", "Dark");
 
         ui.AddTitle("General Settings", "General");
