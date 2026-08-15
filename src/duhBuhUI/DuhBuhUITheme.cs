@@ -1,10 +1,9 @@
-// duhBuhUITheme - visual styling for the shared settings UI.
-// Keep TabControl/TabItem content untouched.
+// duhBuhUITheme - safe visual styling for the shared settings UI.
+// IMPORTANT: Do not replace TabControl/TabItem templates or modify generated tab content.
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 
 public static class DuhBuhUITheme
@@ -16,16 +15,16 @@ public static class DuhBuhUITheme
         if (_initialized) return;
         _initialized = true;
 
-        // DuhBuhUI calls Initialize() before the settings window is shown.
-        // Hook Window initialization so the theme is actually applied to the
-        // window created by the shared UI, rather than merely defining styles.
+        // Streamer.bot's WPF host supports LoadedEvent reliably. Do not use
+        // FrameworkElement.InitializedEvent or data-binding APIs here; the
+        // embedded compiler/runtime may not expose them consistently.
         EventManager.RegisterClassHandler(
             typeof(Window),
-            FrameworkElement.InitializedEvent,
-            new RoutedEventHandler(OnWindowInitialized));
+            FrameworkElement.LoadedEvent,
+            new RoutedEventHandler(OnWindowLoaded));
     }
 
-    private static void OnWindowInitialized(object sender, RoutedEventArgs e)
+    private static void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
         Window window = sender as Window;
         if (window == null) return;
@@ -55,8 +54,6 @@ public static class DuhBuhUITheme
         r["duhBuhDescriptionText"] = new SolidColorBrush(
             light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        // Style controls as they are loaded. No TabControl/TabItem templates
-        // are replaced, so generated tab content remains safe.
         window.AddHandler(
             FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnElementLoaded));
@@ -87,14 +84,11 @@ public static class DuhBuhUITheme
         StackPanel panel = element as StackPanel;
         if (panel == null) return;
 
-        // FieldBox() creates the small setting groups. Give them a visible
-        // surface and spacing without reparenting any controls.
         if (panel.Children.Count >= 2 && panel.Children.Count <= 4 && IsFieldPanel(panel))
         {
             panel.Background = new SolidColorBrush(
                 light ? Color.FromRgb(250, 251, 253) : Color.FromRgb(39, 42, 48));
             panel.Margin = new Thickness(0, 2, 0, 10);
-            return;
         }
     }
 
@@ -139,26 +133,19 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
 
-        // Rounded WPF button template. This only affects Button, not tabs.
+        // Rounded button template using only APIs available in the embedded WPF runtime.
         ControlTemplate template = new ControlTemplate(typeof(Button));
         FrameworkElementFactory borderElement = new FrameworkElementFactory(typeof(Border));
         borderElement.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-        borderElement.SetBinding(Border.BackgroundProperty,
-            new Binding("Background") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        borderElement.SetBinding(Border.BorderBrushProperty,
-            new Binding("BorderBrush") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        borderElement.SetBinding(Border.BorderThicknessProperty,
-            new Binding("BorderThickness") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        borderElement.SetBinding(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        borderElement.SetBinding(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+        borderElement.SetBinding(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+        borderElement.SetValue(Border.PaddingProperty, new Thickness(8, 3, 8, 3));
 
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty,
-            new Binding("Content") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        content.SetBinding(ContentPresenter.ContentTemplateProperty,
-            new Binding("ContentTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        content.SetBinding(ContentPresenter.ForegroundProperty,
-            new Binding("Foreground") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
         content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        content.SetValue(TextElement.ForegroundProperty, new SolidColorBrush(Colors.White));
         borderElement.AppendChild(content);
         template.VisualTree = borderElement;
         style.Setters.Add(new Setter(Control.TemplateProperty, template));
