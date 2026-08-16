@@ -18,16 +18,6 @@ public static class DuhBuhUITheme
         if (_initialized) return;
         _initialized = true;
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
-        EventManager.RegisterClassHandler(typeof(ComboBox), UIElement.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(OnComboBoxPreviewMouseLeftButtonDown), true);
-    }
-
-    private static void OnComboBoxPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        ComboBox combo = sender as ComboBox;
-        if (combo == null || combo.IsDropDownOpen) return;
-        combo.Focus();
-        combo.IsDropDownOpen = true;
-        e.Handled = true;
     }
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -168,23 +158,31 @@ public static class DuhBuhUITheme
         root.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
         root.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
         root.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+
         FrameworkElementFactory toggle = new FrameworkElementFactory(typeof(ToggleButton));
         toggle.SetValue(ToggleButton.BackgroundProperty, Brushes.Transparent);
         toggle.SetValue(ToggleButton.BorderThicknessProperty, new Thickness(0));
         toggle.SetValue(ToggleButton.PaddingProperty, new Thickness(0));
+        toggle.SetValue(ToggleButton.FocusableProperty, false);
+        toggle.SetValue(ToggleButton.ClickModeProperty, ClickMode.Press);
+        toggle.SetValue(UIElement.IsHitTestVisibleProperty, true);
         toggle.SetValue(ToggleButton.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch);
         toggle.SetValue(ToggleButton.VerticalContentAlignmentProperty, VerticalAlignment.Stretch);
         toggle.SetBinding(ToggleButton.IsCheckedProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
         toggle.SetValue(ToggleButton.TemplateProperty, CreateDropdownToggleTemplate(fg));
         grid.AppendChild(toggle);
+
         FrameworkElementFactory popup = new FrameworkElementFactory(typeof(Popup));
+        popup.SetValue(FrameworkElement.NameProperty, "PART_Popup");
         popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
         popup.SetValue(Popup.FocusableProperty, false);
         popup.SetValue(Popup.StaysOpenProperty, false);
         popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
         popup.SetBinding(Popup.PlacementTargetProperty, new Binding(".") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
         FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, Brush(bg));
         popupBorder.SetValue(Border.BorderBrushProperty, Brush(br));
@@ -192,11 +190,13 @@ public static class DuhBuhUITheme
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
         popupBorder.SetValue(Border.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         popupBorder.SetValue(Border.SnapsToDevicePixelsProperty, true);
-        popupBorder.SetBinding(FrameworkElement.WidthProperty, new Binding("ActualWidth") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(Popup), 1) });
+        popupBorder.SetBinding(FrameworkElement.WidthProperty, TemplatedBinding("ActualWidth"));
+
         FrameworkElementFactory scroll = new FrameworkElementFactory(typeof(ScrollViewer));
         scroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         scroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
         scroll.SetValue(ScrollViewer.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch);
+
         FrameworkElementFactory items = new FrameworkElementFactory(typeof(ItemsPresenter));
         items.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
         scroll.AppendChild(items);
@@ -212,7 +212,9 @@ public static class DuhBuhUITheme
     {
         ControlTemplate t = new ControlTemplate(typeof(ToggleButton));
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+
         FrameworkElementFactory display = new FrameworkElementFactory(typeof(ContentPresenter));
+        display.SetValue(UIElement.IsHitTestVisibleProperty, false);
         display.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectionBoxItem") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1) });
         display.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1) });
         display.SetBinding(ContentPresenter.ContentStringFormatProperty, new Binding("SelectionBoxItemStringFormat") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1) });
@@ -221,7 +223,9 @@ public static class DuhBuhUITheme
         display.SetBinding(ContentPresenter.VerticalAlignmentProperty, new Binding("VerticalContentAlignment") { RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1) });
         display.SetValue(System.Windows.Documents.TextElement.ForegroundProperty, Brush(fg));
         grid.AppendChild(display);
+
         FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(TextBlock));
+        arrow.SetValue(UIElement.IsHitTestVisibleProperty, false);
         arrow.SetValue(TextBlock.TextProperty, "▼");
         arrow.SetValue(TextBlock.FontSizeProperty, 11.0);
         arrow.SetValue(TextBlock.ForegroundProperty, Brush(fg));
