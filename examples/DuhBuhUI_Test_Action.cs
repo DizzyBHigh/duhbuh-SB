@@ -7,6 +7,8 @@ public class CPHInline
 {
     public bool Execute()
     {
+        DuhBuhUIButtonTheme.Initialize();
+
         DuhBuhUI ui = new DuhBuhUI(
             "duhBuhUI Test",
             "0.1.0",
