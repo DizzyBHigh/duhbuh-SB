@@ -61,18 +61,69 @@ public static class DuhBuhUITheme
 
     private static Style CreateButtonStyle(bool light)
     {
+        Color normal = light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 110, 180);
+        Color hover = light ? Color.FromRgb(58, 108, 184) : Color.FromRgb(72, 128, 198);
+        Color pressed = light ? Color.FromRgb(34, 72, 132) : Color.FromRgb(44, 88, 150);
+        Color disabled = light ? Color.FromRgb(190, 195, 204) : Color.FromRgb(70, 74, 82);
+        Color normalBorder = light ? Color.FromRgb(32, 68, 125) : Color.FromRgb(90, 140, 205);
+        Color accentBorder = Color.FromRgb(224, 166, 52);
+
         Style style = new Style(typeof(Button));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 110, 180))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(normal)));
         style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(light ? Color.FromRgb(32, 68, 125) : Color.FromRgb(90, 140, 205))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(normalBorder)));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 7, 14, 7)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(16, 7, 16, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
-        style.Setters.Add(new Setter(Control.WidthProperty, 96.0));
-        style.Setters.Add(new Setter(Control.HeightProperty, 36.0));
+        style.Setters.Add(new Setter(Control.WidthProperty, 104.0));
+        style.Setters.Add(new Setter(Control.HeightProperty, 38.0));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateButtonTemplate()));
+
+        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
+        mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accentBorder)));
+        style.Triggers.Add(mouseOver);
+
+        Trigger pressedTrigger = new Trigger { Property = ButtonBase.IsPressedProperty, Value = true };
+        pressedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brush(pressed)));
+        pressedTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accentBorder)));
+        style.Triggers.Add(pressedTrigger);
+
+        Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+        disabledTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brush(disabled)));
+        disabledTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Color.FromRgb(150, 154, 162))));
+        disabledTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(disabled)));
+        style.Triggers.Add(disabledTrigger);
+
         return style;
+    }
+
+    private static ControlTemplate CreateButtonTemplate()
+    {
+        ControlTemplate template = new ControlTemplate(typeof(Button));
+
+        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        border.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
+        border.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+        FrameworkElementFactory presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
+        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
+        presenter.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
+        presenter.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.MarginProperty, TemplatedBinding("Padding"));
+        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+        border.AppendChild(presenter);
+
+        template.VisualTree = border;
+        return template;
     }
 
     private static Style CreateTextBoxStyle(bool light)
@@ -119,45 +170,50 @@ public static class DuhBuhUITheme
 
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
 
-        FrameworkElementFactory display = new FrameworkElementFactory(typeof(ContentPresenter));
-        display.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectionBoxItem") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        display.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        display.SetBinding(ContentPresenter.ContentStringFormatProperty, new Binding("SelectionBoxItemStringFormat") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        display.SetBinding(ContentPresenter.MarginProperty, new Binding("Padding") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        display.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
-        display.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
-        grid.AppendChild(display);
-
-        FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(ToggleButton));
-        arrow.SetValue(ToggleButton.ContentProperty, "▼");
-        arrow.SetValue(ToggleButton.WidthProperty, 28.0);
-        arrow.SetValue(ToggleButton.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-        arrow.SetValue(ToggleButton.VerticalAlignmentProperty, VerticalAlignment.Stretch);
-        arrow.SetValue(ToggleButton.BackgroundProperty, Brushes.Transparent);
-        arrow.SetValue(ToggleButton.BorderThicknessProperty, new Thickness(0));
-        arrow.SetValue(ToggleButton.ForegroundProperty, Brush(foreground));
-        arrow.SetBinding(ToggleButton.IsCheckedProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
-        grid.AppendChild(arrow);
+        FrameworkElementFactory toggle = new FrameworkElementFactory(typeof(ToggleButton));
+        toggle.SetValue(ToggleButton.BackgroundProperty, Brushes.Transparent);
+        toggle.SetValue(ToggleButton.BorderThicknessProperty, new Thickness(0));
+        toggle.SetValue(ToggleButton.PaddingProperty, new Thickness(0));
+        toggle.SetValue(ToggleButton.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch);
+        toggle.SetValue(ToggleButton.VerticalContentAlignmentProperty, VerticalAlignment.Stretch);
+        toggle.SetBinding(ToggleButton.IsCheckedProperty, new Binding("IsDropDownOpen")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent),
+            Mode = BindingMode.TwoWay
+        });
+        toggle.SetValue(ToggleButton.TemplateProperty, CreateDropdownToggleTemplate(foreground));
+        grid.AppendChild(toggle);
 
         FrameworkElementFactory popup = new FrameworkElementFactory(typeof(Popup));
         popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
         popup.SetValue(Popup.FocusableProperty, false);
-        popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
-        popup.SetBinding(Popup.PlacementTargetProperty, new Binding(".") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        popup.SetValue(Popup.StaysOpenProperty, false);
+        popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent),
+            Mode = BindingMode.TwoWay
+        });
+        popup.SetBinding(Popup.PlacementTargetProperty, new Binding(".")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+        });
 
         FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, Brush(background));
         popupBorder.SetValue(Border.BorderBrushProperty, Brush(border));
         popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
-        popupBorder.SetValue(Border.MinWidthProperty, 180.0);
+        popupBorder.SetValue(Border.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         popupBorder.SetValue(Border.SnapsToDevicePixelsProperty, true);
 
         FrameworkElementFactory scroll = new FrameworkElementFactory(typeof(ScrollViewer));
         scroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         scroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+        scroll.SetValue(ScrollViewer.HorizontalContentAlignmentProperty, HorizontalAlignment.Left);
+
         FrameworkElementFactory items = new FrameworkElementFactory(typeof(ItemsPresenter));
+        items.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         scroll.AppendChild(items);
         popupBorder.AppendChild(scroll);
         popup.AppendChild(popupBorder);
@@ -165,6 +221,52 @@ public static class DuhBuhUITheme
 
         root.AppendChild(grid);
         template.VisualTree = root;
+        return template;
+    }
+
+    private static ControlTemplate CreateDropdownToggleTemplate(Color foreground)
+    {
+        ControlTemplate template = new ControlTemplate(typeof(ToggleButton));
+
+        FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+
+        FrameworkElementFactory display = new FrameworkElementFactory(typeof(ContentPresenter));
+        display.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectionBoxItem")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        display.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        display.SetBinding(ContentPresenter.ContentStringFormatProperty, new Binding("SelectionBoxItemStringFormat")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        display.SetBinding(ContentPresenter.MarginProperty, new Binding("Padding")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        display.SetBinding(ContentPresenter.HorizontalAlignmentProperty, new Binding("HorizontalContentAlignment")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        display.SetBinding(ContentPresenter.VerticalAlignmentProperty, new Binding("VerticalContentAlignment")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1)
+        });
+        grid.AppendChild(display);
+
+        FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(TextBlock));
+        arrow.SetValue(TextBlock.TextProperty, "▼");
+        arrow.SetValue(TextBlock.FontSizeProperty, 11.0);
+        arrow.SetValue(TextBlock.ForegroundProperty, Brush(foreground));
+        arrow.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+        arrow.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+        arrow.SetValue(TextBlock.MarginProperty, new Thickness(0, 0, 8, 0));
+        grid.AppendChild(arrow);
+
+        template.VisualTree = grid;
         return template;
     }
 
@@ -183,6 +285,7 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
         style.Setters.Add(new Setter(Control.HeightProperty, 30.0));
+        style.Setters.Add(new Setter(Control.MinWidthProperty, 0.0));
 
         Trigger highlighted = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
         highlighted.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
