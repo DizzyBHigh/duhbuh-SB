@@ -1,5 +1,5 @@
-// duhBuhUITheme - safe visual styling for the shared settings UI.
-// Uses plain WPF styles and state triggers compatible with Streamer.bot.
+// duhBuhUITheme - shared visual styling for the settings UI.
+// Uses plain WPF styles and direct control styling compatible with Streamer.bot.
 
 using System;
 using System.Collections.Generic;
@@ -11,6 +11,7 @@ public static class DuhBuhUITheme
 {
     private static bool _initialized;
     private static readonly List<ComboBox> _styledComboBoxes = new List<ComboBox>();
+    private static readonly List<TabControl> _styledTabControls = new List<TabControl>();
 
     public static void Initialize()
     {
@@ -45,7 +46,6 @@ public static class DuhBuhUITheme
         r["duhBuhSectionText"] = Brush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = Brush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        // Resource roles found in TawmaeUI's dropdown implementation.
         r["ItemBg"] = Brush(light ? Colors.White : Color.FromRgb(45, 48, 55));
         r["ItemHoverBg"] = Brush(light ? Color.FromRgb(239, 242, 247) : Color.FromRgb(57, 61, 70));
         r["ItemSelectedBg"] = Brush(Color.FromRgb(224, 166, 52));
@@ -57,6 +57,7 @@ public static class DuhBuhUITheme
         {
             ApplySectionCards(window, light);
             ApplyComboBoxSelectionFixes(window, light);
+            ApplyTabVisuals(window, light);
         }));
     }
 
@@ -114,6 +115,77 @@ public static class DuhBuhUITheme
             bool highlighted = item.IsHighlighted;
             item.Background = new SolidColorBrush(selected ? selectedBackground : (highlighted ? hoverBackground : normalBackground));
             item.Foreground = new SolidColorBrush(selected ? selectedForeground : normalForeground);
+        }
+    }
+
+    private static void ApplyTabVisuals(Window window, bool light)
+    {
+        TabControl tabs = FindTabControl(window);
+        if (tabs == null) return;
+
+        if (!_styledTabControls.Contains(tabs))
+        {
+            _styledTabControls.Add(tabs);
+            tabs.SelectionChanged += delegate { UpdateTabVisuals(tabs, light); };
+        }
+
+        for (int i = 0; i < tabs.Items.Count; i++)
+        {
+            TabItem tab = tabs.Items[i] as TabItem;
+            if (tab == null) continue;
+
+            string headerText = null;
+            TextBlock existingHeader = tab.Header as TextBlock;
+            if (existingHeader != null)
+                headerText = existingHeader.Text;
+            else if (tab.Header != null)
+                headerText = tab.Header.ToString();
+
+            if (headerText != null && existingHeader == null)
+            {
+                tab.Header = new TextBlock
+                {
+                    Text = headerText,
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 13,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+            }
+        }
+
+        UpdateTabVisuals(tabs, light);
+    }
+
+    private static void UpdateTabVisuals(TabControl tabs, bool light)
+    {
+        if (tabs == null) return;
+
+        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(31, 34, 40);
+        Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220);
+        Color selectedBackground = light ? Colors.White : Color.FromRgb(43, 47, 54);
+        Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(245, 247, 250);
+        Color border = light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80);
+        Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
+
+        for (int i = 0; i < tabs.Items.Count; i++)
+        {
+            TabItem tab = tabs.Items[i] as TabItem;
+            if (tab == null) continue;
+            bool selected = tab.IsSelected;
+
+            tab.Background = Brush(selected ? selectedBackground : normalBackground);
+            tab.Foreground = Brush(selected ? selectedForeground : normalForeground);
+            tab.BorderBrush = Brush(selected ? accent : border);
+            tab.BorderThickness = selected ? new Thickness(1, 2, 1, 0) : new Thickness(1, 1, 1, 0);
+
+            TextBlock header = tab.Header as TextBlock;
+            if (header != null)
+            {
+                header.Foreground = Brush(selected ? selectedForeground : normalForeground);
+                header.FontWeight = FontWeights.SemiBold;
+                header.TextAlignment = TextAlignment.Center;
+            }
         }
     }
 
@@ -210,9 +282,9 @@ public static class DuhBuhUITheme
 
     private static Style CreateTabItemStyle(bool light)
     {
-        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(45, 48, 55);
+        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(31, 34, 40);
         Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220);
-        Color selectedBackground = light ? Colors.White : Color.FromRgb(39, 42, 48);
+        Color selectedBackground = light ? Colors.White : Color.FromRgb(43, 47, 54);
         Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(245, 247, 250);
         Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
         Style style = new Style(typeof(TabItem));
@@ -224,12 +296,6 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(2, 0, 2, 0)));
         style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         style.Setters.Add(new Setter(Control.MinHeightProperty, 32.0));
-        Trigger selected = new Trigger { Property = TabItem.IsSelectedProperty, Value = true };
-        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(selectedBackground)));
-        selected.Setters.Add(new Setter(Control.ForegroundProperty, Brush(selectedForeground)));
-        selected.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accent)));
-        selected.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 2, 1, 0)));
-        style.Triggers.Add(selected);
         return style;
     }
 
@@ -269,12 +335,15 @@ public static class DuhBuhUITheme
         List<UIElement> original = new List<UIElement>();
         for (int i = 0; i < category.Children.Count; i++) original.Add(category.Children[i]);
         bool hasHeading = false;
-        for (int i = 0; i < original.Count; i++) if (IsSectionHeading(original[i] as TextBlock)) { hasHeading = true; break; }
+        for (int i = 0; i < original.Count; i++)
+            if (IsSectionHeading(original[i] as TextBlock)) { hasHeading = true; break; }
         if (!hasHeading) return;
+
         category.Tag = "__duhbuh_cards_applied";
         category.Children.Clear();
         StackPanel currentContent = null;
         bool sawFirstHeading = false;
+
         for (int i = 0; i < original.Count; i++)
         {
             UIElement child = original[i];
@@ -284,7 +353,13 @@ public static class DuhBuhUITheme
                 sawFirstHeading = true;
                 currentContent = new StackPanel();
                 Border currentCard = CreateCard(currentContent, light);
-                currentContent.Children.Add(new Border { Height = 3, Background = Brush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52)), HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 8) });
+                currentContent.Children.Add(new Border
+                {
+                    Height = 3,
+                    Background = Brush(light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52)),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    Margin = new Thickness(0, 0, 0, 8)
+                });
                 heading.Foreground = Brush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
                 heading.Background = Brush(light ? Color.FromRgb(238, 241, 246) : Color.FromRgb(43, 47, 54));
                 heading.Padding = new Thickness(10, 7, 10, 7);
@@ -294,7 +369,8 @@ public static class DuhBuhUITheme
                 category.Children.Add(currentCard);
                 continue;
             }
-            if (sawFirstHeading && currentContent != null) currentContent.Children.Add(child); else category.Children.Add(child);
+            if (sawFirstHeading && currentContent != null) currentContent.Children.Add(child);
+            else category.Children.Add(child);
         }
     }
 
