@@ -10,12 +10,107 @@ on:
       - 'src/duhBuhUI/**'
       - '.github/workflows/build-duhbuhui.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply reusable button styling
+        shell: pwsh
+        run: |
+          $path = 'src/duhBuhUI/DuhBuhUITheme.cs'
+          $text = Get-Content -Raw -Encoding UTF8 $path
+          $start = $text.IndexOf('    private static Style CreateButtonStyle(bool light)')
+          $end = $text.IndexOf('    private static Style CreateTextBoxStyle(bool light)', $start)
+          if ($start -lt 0 -or $end -lt 0) { throw 'Could not locate button style block.' }
+
+          $replacement = @'
+    private static Style CreateButtonStyle(bool light)
+    {
+        Color normal = light ? Color.FromRgb(44, 90, 160) : Color.FromRgb(58, 110, 180);
+        Color hover = light ? Color.FromRgb(58, 108, 184) : Color.FromRgb(72, 128, 198);
+        Color pressed = light ? Color.FromRgb(34, 72, 132) : Color.FromRgb(44, 88, 150);
+        Color disabled = light ? Color.FromRgb(190, 195, 204) : Color.FromRgb(70, 74, 82);
+        Color normalBorder = light ? Color.FromRgb(32, 68, 125) : Color.FromRgb(90, 140, 205);
+        Color accentBorder = Color.FromRgb(224, 166, 52);
+
+        Style style = new Style(typeof(Button));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(normal)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(normalBorder)));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(16, 7, 16, 7)));
+        style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(4, 3, 4, 3)));
+        style.Setters.Add(new Setter(Control.WidthProperty, 104.0));
+        style.Setters.Add(new Setter(Control.HeightProperty, 38.0));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateButtonTemplate()));
+
+        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
+        mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accentBorder)));
+        style.Triggers.Add(mouseOver);
+
+        Trigger pressedTrigger = new Trigger { Property = ButtonBase.IsPressedProperty, Value = true };
+        pressedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brush(pressed)));
+        pressedTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accentBorder)));
+        style.Triggers.Add(pressedTrigger);
+
+        Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+        disabledTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brush(disabled)));
+        disabledTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Color.FromRgb(150, 154, 162))));
+        disabledTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(disabled)));
+        style.Triggers.Add(disabledTrigger);
+
+        return style;
+    }
+
+    private static ControlTemplate CreateButtonTemplate()
+    {
+        ControlTemplate template = new ControlTemplate(typeof(Button));
+        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        border.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
+        border.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+        FrameworkElementFactory presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
+        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
+        presenter.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
+        presenter.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.MarginProperty, TemplatedBinding("Padding"));
+        border.AppendChild(presenter);
+
+        template.VisualTree = border;
+        return template;
+    }
+
+'@
+          $text = $text.Substring(0, $start) + $replacement + $text.Substring($end)
+          Set-Content -Path $path -Value $text -Encoding UTF8
+
+      - name: Commit reusable button styling
+        if: github.actor != 'github-actions[bot]'
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/duhBuhUI/DuhBuhUITheme.cs
+          if (git diff --cached --quiet) { Write-Host 'Button styling already present.'; exit 0 }
+          git commit -m 'Style reusable buttons'
+          git push
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
