@@ -27,4 +27,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: duhBuhUI
-          path: src/duhBuhUI/bin/Release/duhBuhUI.dll
+          path: src/duhBuhUI/bin/Release/**/duhBuhUI.dll
+          if-no-files-found: error
