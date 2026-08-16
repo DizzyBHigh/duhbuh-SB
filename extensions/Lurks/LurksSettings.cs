@@ -30,9 +30,7 @@ public class CPHInline
         CPH.SetGlobalVar("__duhbuh_headerDarkImage", darkBanner, true);
         CPH.SetGlobalVar("__duhbuh_headerLightImage", lightBanner, true);
 
-        // Radio groups are used instead of native ComboBoxes for the small fixed option sets.
-        // This avoids the unreadable native WPF selection highlight in Streamer.bot.
-        ui.AddRadioGroup("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
+        ui.AddDropdown("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
 
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);
@@ -67,9 +65,9 @@ public class CPHInline
 
         ui.AddTitle("Timing & Animation", "Overlay - Lurks");
         ui.AddSlider("Display Duration (seconds)", "How long each Lurk notification remains visible.", "Overlay - Lurks", "duhbuh_overlay_lurks_durationSeconds", 1, 60, 5);
-        ui.AddRadioGroup("Enter Animation", "How a Lurk notification appears.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", new[] { "slide", "fade", "scale", "none" }, "slide");
+        ui.AddDropdown("Enter Animation", "How a Lurk notification appears.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterAnimation", new[] { "slide", "fade", "scale", "none" }, "slide");
         ui.AddSlider("Enter Duration (ms)", "Length of the entrance animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_enterDurationMs", 0, 2000, 300);
-        ui.AddRadioGroup("Exit Animation", "How a Lurk notification disappears.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", new[] { "fade", "slide", "scale", "none" }, "fade");
+        ui.AddDropdown("Exit Animation", "How a Lurk notification disappears.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitAnimation", new[] { "fade", "slide", "scale", "none" }, "fade");
         ui.AddSlider("Exit Duration (ms)", "Length of the exit animation.", "Overlay - Lurks", "duhbuh_overlay_lurks_exitDurationMs", 0, 2000, 300);
 
         ui.AddTitle("Appearance", "Overlay - Lurks");
