@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 
@@ -88,23 +89,115 @@ public static class DuhBuhUITheme
 
     private static Style CreateComboBoxStyle(bool light)
     {
+        Color background = light ? Colors.White : Color.FromRgb(45, 48, 55);
+        Color foreground = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
+        Color border = light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90);
+        Color hover = light ? Color.FromRgb(238, 242, 248) : Color.FromRgb(58, 63, 72);
+        Color selected = light ? Color.FromRgb(224, 174, 74) : Color.FromRgb(224, 166, 52);
+
         Style style = new Style(typeof(ComboBox));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245))));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(background)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(foreground)));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(border)));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(7, 4, 7, 4)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
+        style.Setters.Add(new Setter(Control.HeightProperty, 30.0));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboBoxTemplate(background, foreground, border)));
         return style;
+    }
+
+    private static ControlTemplate CreateComboBoxTemplate(Color background, Color foreground, Color border)
+    {
+        ControlTemplate template = new ControlTemplate(typeof(ComboBox));
+
+        Border shell = new Border();
+        FrameworkElementFactory root = new FrameworkElementFactory(typeof(Border));
+        root.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        root.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
+        root.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
+        root.SetBinding(Border.CornerRadiusProperty, new Binding("Tag") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+
+        FrameworkElementFactory display = new FrameworkElementFactory(typeof(ContentPresenter));
+        display.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectionBoxItem") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        display.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        display.SetBinding(ContentPresenter.ContentStringFormatProperty, new Binding("SelectionBoxItemStringFormat") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        display.SetBinding(ContentPresenter.MarginProperty, new Binding("Padding") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        display.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        display.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
+        display.SetBinding(ContentPresenter.TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
+        grid.AppendChild(display);
+
+        FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(ToggleButton));
+        arrow.SetValue(ToggleButton.ContentProperty, "▼");
+        arrow.SetValue(ToggleButton.WidthProperty, 28.0);
+        arrow.SetValue(ToggleButton.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+        arrow.SetValue(ToggleButton.VerticalAlignmentProperty, VerticalAlignment.Stretch);
+        arrow.SetValue(ToggleButton.BackgroundProperty, Brushes.Transparent);
+        arrow.SetValue(ToggleButton.BorderThicknessProperty, new Thickness(0));
+        arrow.SetValue(ToggleButton.ForegroundProperty, Brush(foreground));
+        arrow.SetBinding(ToggleButton.IsCheckedProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
+        grid.AppendChild(arrow);
+
+        FrameworkElementFactory popup = new FrameworkElementFactory(typeof(Popup));
+        popup.SetValue(Popup.PlacementProperty, PlacementMode.Bottom);
+        popup.SetValue(Popup.AllowsTransparencyProperty, true);
+        popup.SetValue(Popup.FocusableProperty, false);
+        popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
+        popup.SetBinding(Popup.PlacementTargetProperty, new Binding("TemplateParent") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
+        popupBorder.SetValue(Border.BackgroundProperty, Brush(background));
+        popupBorder.SetValue(Border.BorderBrushProperty, Brush(border));
+        popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+        popupBorder.SetValue(Border.MinWidthProperty, 180.0);
+        popupBorder.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+        FrameworkElementFactory scroll = new FrameworkElementFactory(typeof(ScrollViewer));
+        scroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
+        scroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+        FrameworkElementFactory items = new FrameworkElementFactory(typeof(ItemsPresenter));
+        scroll.AppendChild(items);
+        popupBorder.AppendChild(scroll);
+        popup.AppendChild(popupBorder);
+        grid.AppendChild(popup);
+
+        root.AppendChild(grid);
+        template.VisualTree = root;
+        return template;
     }
 
     private static Style CreateComboBoxItemStyle(bool light)
     {
+        Color background = light ? Colors.White : Color.FromRgb(45, 48, 55);
+        Color foreground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
+        Color hover = light ? Color.FromRgb(238, 242, 248) : Color.FromRgb(58, 63, 72);
+        Color selected = light ? Color.FromRgb(224, 174, 74) : Color.FromRgb(224, 166, 52);
+
         Style style = new Style(typeof(ComboBoxItem));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247))));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(background)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(foreground)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(Control.HeightProperty, 30.0));
+
+        Trigger highlighted = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
+        highlighted.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
+        highlighted.Setters.Add(new Setter(Control.ForegroundProperty, Brush(foreground)));
+        style.Triggers.Add(highlighted);
+
+        Trigger selectedTrigger = new Trigger { Property = ComboBoxItem.IsSelectedProperty, Value = true };
+        selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brush(selected)));
+        selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.Black)));
+        style.Triggers.Add(selectedTrigger);
+
         return style;
     }
 
