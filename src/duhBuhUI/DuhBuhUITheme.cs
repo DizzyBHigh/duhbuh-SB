@@ -92,8 +92,6 @@ public static class DuhBuhUITheme
         Color background = light ? Colors.White : Color.FromRgb(45, 48, 55);
         Color foreground = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
         Color border = light ? Color.FromRgb(205, 210, 220) : Color.FromRgb(75, 80, 90);
-        Color hover = light ? Color.FromRgb(238, 242, 248) : Color.FromRgb(58, 63, 72);
-        Color selected = light ? Color.FromRgb(224, 174, 74) : Color.FromRgb(224, 166, 52);
 
         Style style = new Style(typeof(ComboBox));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(background)));
@@ -113,12 +111,11 @@ public static class DuhBuhUITheme
     {
         ControlTemplate template = new ControlTemplate(typeof(ComboBox));
 
-        Border shell = new Border();
         FrameworkElementFactory root = new FrameworkElementFactory(typeof(Border));
         root.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
         root.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
         root.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
-        root.SetBinding(Border.CornerRadiusProperty, new Binding("Tag") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        root.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
 
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
 
@@ -129,7 +126,6 @@ public static class DuhBuhUITheme
         display.SetBinding(ContentPresenter.MarginProperty, new Binding("Padding") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
         display.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
         display.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
-        display.SetBinding(ContentPresenter.TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
         grid.AppendChild(display);
 
         FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(ToggleButton));
@@ -148,13 +144,13 @@ public static class DuhBuhUITheme
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
         popup.SetValue(Popup.FocusableProperty, false);
         popup.SetBinding(Popup.IsOpenProperty, new Binding("IsDropDownOpen") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
-        popup.SetBinding(Popup.PlacementTargetProperty, new Binding("TemplateParent") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        popup.SetBinding(Popup.PlacementTargetProperty, new Binding(".") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
 
         FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
         popupBorder.SetValue(Border.BackgroundProperty, Brush(background));
         popupBorder.SetValue(Border.BorderBrushProperty, Brush(border));
         popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-        popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+        popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
         popupBorder.SetValue(Border.MinWidthProperty, 180.0);
         popupBorder.SetValue(Border.SnapsToDevicePixelsProperty, true);
 
