@@ -1,16 +1,13 @@
-// duhBuhUITheme - shared visual styling for the settings UI.
-// Uses plain WPF styles and direct control styling compatible with Streamer.bot.
-
 using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 
 public static class DuhBuhUITheme
 {
     private static bool _initialized;
-    private static readonly List<ComboBox> _styledComboBoxes = new List<ComboBox>();
     private static readonly List<TabControl> _styledTabControls = new List<TabControl>();
 
     public static void Initialize()
@@ -31,6 +28,7 @@ public static class DuhBuhUITheme
     public static void Apply(Window window, bool light)
     {
         if (window == null) return;
+
         ResourceDictionary r = window.Resources;
         r[typeof(Button)] = CreateButtonStyle(light);
         r[typeof(TextBox)] = CreateTextBoxStyle(light);
@@ -46,147 +44,18 @@ public static class DuhBuhUITheme
         r["duhBuhSectionText"] = Brush(light ? Color.FromRgb(35, 39, 46) : Color.FromRgb(235, 238, 243));
         r["duhBuhDescriptionText"] = Brush(light ? Color.FromRgb(100, 106, 118) : Color.FromRgb(160, 167, 178));
 
-        r["ItemBg"] = Brush(light ? Colors.White : Color.FromRgb(45, 48, 55));
-        r["ItemHoverBg"] = Brush(light ? Color.FromRgb(239, 242, 247) : Color.FromRgb(57, 61, 70));
-        r["ItemSelectedBg"] = Brush(Color.FromRgb(224, 166, 52));
-        r["ItemSelectedFg"] = Brush(Colors.Black);
-        r["ShellBg"] = Brush(light ? Colors.White : Color.FromRgb(45, 48, 55));
-        r["darkBg"] = Brush(Color.FromRgb(45, 48, 55));
-
         window.Dispatcher.BeginInvoke(new Action(delegate
         {
             ApplySectionCards(window, light);
-            ApplyComboBoxSelectionFixes(window, light);
             ApplyTabVisuals(window, light);
         }));
     }
 
     private static SolidColorBrush Brush(Color color)
     {
-        SolidColorBrush b = new SolidColorBrush(color);
-        b.Freeze();
-        return b;
-    }
-
-    private static void ApplyComboBoxSelectionFixes(Window window, bool light)
-    {
-        ApplyComboBoxSelectionFixesToTree(window, light);
-    }
-
-    private static void ApplyComboBoxSelectionFixesToTree(DependencyObject node, bool light)
-    {
-        if (node == null) return;
-        ComboBox combo = node as ComboBox;
-        if (combo != null)
-        {
-            if (!_styledComboBoxes.Contains(combo))
-            {
-                _styledComboBoxes.Add(combo);
-                combo.SelectionChanged += delegate { QueueComboBoxRestyle(combo, light); };
-                combo.DropDownOpened += delegate { QueueComboBoxRestyle(combo, light); };
-                combo.Loaded += delegate { QueueComboBoxRestyle(combo, light); };
-            }
-            QueueComboBoxRestyle(combo, light);
-        }
-        int count = VisualTreeHelper.GetChildrenCount(node);
-        for (int i = 0; i < count; i++) ApplyComboBoxSelectionFixesToTree(VisualTreeHelper.GetChild(node, i), light);
-    }
-
-    private static void QueueComboBoxRestyle(ComboBox combo, bool light)
-    {
-        if (combo == null) return;
-        RestyleComboBoxItems(combo, light);
-        combo.Dispatcher.BeginInvoke(new Action(delegate { RestyleComboBoxItems(combo, light); }));
-    }
-
-    private static void RestyleComboBoxItems(ComboBox combo, bool light)
-    {
-        if (combo == null) return;
-        Color normalBackground = light ? Colors.White : Color.FromRgb(45, 48, 55);
-        Color normalForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
-        Color selectedBackground = Color.FromRgb(224, 166, 52);
-        Color selectedForeground = Colors.Black;
-        Color hoverBackground = light ? Color.FromRgb(239, 242, 247) : Color.FromRgb(57, 61, 70);
-        for (int i = 0; i < combo.Items.Count; i++)
-        {
-            ComboBoxItem item = combo.ItemContainerGenerator.ContainerFromIndex(i) as ComboBoxItem;
-            if (item == null) continue;
-            bool selected = item.IsSelected;
-            bool highlighted = item.IsHighlighted;
-            item.Background = new SolidColorBrush(selected ? selectedBackground : (highlighted ? hoverBackground : normalBackground));
-            item.Foreground = new SolidColorBrush(selected ? selectedForeground : normalForeground);
-        }
-    }
-
-    private static void ApplyTabVisuals(Window window, bool light)
-    {
-        TabControl tabs = FindTabControl(window);
-        if (tabs == null) return;
-
-        if (!_styledTabControls.Contains(tabs))
-        {
-            _styledTabControls.Add(tabs);
-            tabs.SelectionChanged += delegate { UpdateTabVisuals(tabs, light); };
-        }
-
-        for (int i = 0; i < tabs.Items.Count; i++)
-        {
-            TabItem tab = tabs.Items[i] as TabItem;
-            if (tab == null) continue;
-
-            string headerText = null;
-            TextBlock existingHeader = tab.Header as TextBlock;
-            if (existingHeader != null)
-                headerText = existingHeader.Text;
-            else if (tab.Header != null)
-                headerText = tab.Header.ToString();
-
-            if (headerText != null && existingHeader == null)
-            {
-                tab.Header = new TextBlock
-                {
-                    Text = headerText,
-                    FontWeight = FontWeights.SemiBold,
-                    FontSize = 13,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center
-                };
-            }
-        }
-
-        UpdateTabVisuals(tabs, light);
-    }
-
-    private static void UpdateTabVisuals(TabControl tabs, bool light)
-    {
-        if (tabs == null) return;
-
-        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(31, 34, 40);
-        Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220);
-        Color selectedBackground = light ? Colors.White : Color.FromRgb(43, 47, 54);
-        Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(245, 247, 250);
-        Color border = light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80);
-        Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
-
-        for (int i = 0; i < tabs.Items.Count; i++)
-        {
-            TabItem tab = tabs.Items[i] as TabItem;
-            if (tab == null) continue;
-            bool selected = tab.IsSelected;
-
-            tab.Background = Brush(selected ? selectedBackground : normalBackground);
-            tab.Foreground = Brush(selected ? selectedForeground : normalForeground);
-            tab.BorderBrush = Brush(selected ? accent : border);
-            tab.BorderThickness = selected ? new Thickness(1, 2, 1, 0) : new Thickness(1, 1, 1, 0);
-
-            TextBlock header = tab.Header as TextBlock;
-            if (header != null)
-            {
-                header.Foreground = Brush(selected ? selectedForeground : normalForeground);
-                header.FontWeight = FontWeights.SemiBold;
-                header.TextAlignment = TextAlignment.Center;
-            }
-        }
+        SolidColorBrush brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
     }
 
     private static Style CreateButtonStyle(bool light)
@@ -226,30 +95,16 @@ public static class DuhBuhUITheme
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(7, 4, 7, 4)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(3, 3, 3, 3)));
-        style.Setters.Add(new Setter(ItemsControl.ItemContainerStyleProperty, CreateComboBoxItemStyle(light)));
         return style;
     }
 
     private static Style CreateComboBoxItemStyle(bool light)
     {
-        Color normalBackground = light ? Colors.White : Color.FromRgb(45, 48, 55);
-        Color normalForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247);
-        Color selectedBackground = Color.FromRgb(224, 166, 52);
-        Color selectedForeground = Colors.Black;
-        Color hoverBackground = light ? Color.FromRgb(239, 242, 247) : Color.FromRgb(57, 61, 70);
         Style style = new Style(typeof(ComboBoxItem));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(normalBackground)));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(normalForeground)));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(light ? Colors.White : Color.FromRgb(45, 48, 55))));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(242, 244, 247))));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
-        Trigger highlighted = new Trigger { Property = ComboBoxItem.IsHighlightedProperty, Value = true };
-        highlighted.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hoverBackground)));
-        highlighted.Setters.Add(new Setter(Control.ForegroundProperty, Brush(normalForeground)));
-        style.Triggers.Add(highlighted);
-        Trigger selected = new Trigger { Property = ComboBoxItem.IsSelectedProperty, Value = true };
-        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(selectedBackground)));
-        selected.Setters.Add(new Setter(Control.ForegroundProperty, Brush(selectedForeground)));
-        style.Triggers.Add(selected);
         return style;
     }
 
@@ -284,25 +139,124 @@ public static class DuhBuhUITheme
     {
         Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(31, 34, 40);
         Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(205, 211, 220);
-        Color selectedBackground = light ? Colors.White : Color.FromRgb(43, 47, 54);
-        Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Color.FromRgb(245, 247, 250);
-        Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
+        Color border = light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80);
+
         Style style = new Style(typeof(TabItem));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(normalBackground)));
         style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(normalForeground)));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80))));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(border)));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1, 1, 1, 0)));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 7, 12, 7)));
         style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(2, 0, 2, 0)));
         style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         style.Setters.Add(new Setter(Control.MinHeightProperty, 32.0));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateTabItemTemplate()));
         return style;
+    }
+
+    private static ControlTemplate CreateTabItemTemplate()
+    {
+        ControlTemplate template = new ControlTemplate(typeof(TabItem));
+        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        border.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
+        border.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
+        border.SetBinding(Border.PaddingProperty, TemplatedBinding("Padding"));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+        FrameworkElementFactory presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(ContentPresenter.ContentSourceProperty, "Header");
+        presenter.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
+        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+        border.AppendChild(presenter);
+
+        template.VisualTree = border;
+        return template;
+    }
+
+    private static Binding TemplatedBinding(string path)
+    {
+        return new Binding(path)
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+        };
+    }
+
+    private static void ApplyTabVisuals(Window window, bool light)
+    {
+        TabControl tabs = FindTabControl(window);
+        if (tabs == null) return;
+
+        if (!_styledTabControls.Contains(tabs))
+        {
+            _styledTabControls.Add(tabs);
+            tabs.SelectionChanged += delegate { UpdateTabVisuals(tabs, light); };
+        }
+
+        for (int i = 0; i < tabs.Items.Count; i++)
+        {
+            TabItem tab = tabs.Items[i] as TabItem;
+            if (tab == null) continue;
+
+            TextBlock header = tab.Header as TextBlock;
+            if (header == null && tab.Header != null)
+            {
+                header = new TextBlock
+                {
+                    Text = tab.Header.ToString(),
+                    FontSize = 13,
+                    FontWeight = FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                tab.Header = header;
+            }
+        }
+
+        UpdateTabVisuals(tabs, light);
+    }
+
+    private static void UpdateTabVisuals(TabControl tabs, bool light)
+    {
+        if (tabs == null) return;
+
+        Color normalBackground = light ? Color.FromRgb(232, 235, 240) : Color.FromRgb(31, 34, 40);
+        Color normalForeground = light ? Color.FromRgb(45, 49, 57) : Color.FromRgb(225, 229, 235);
+        Color selectedBackground = light ? Colors.White : Color.FromRgb(43, 47, 54);
+        Color selectedForeground = light ? Color.FromRgb(25, 28, 34) : Colors.White;
+        Color border = light ? Color.FromRgb(200, 205, 214) : Color.FromRgb(65, 70, 80);
+        Color accent = light ? Color.FromRgb(176, 120, 22) : Color.FromRgb(224, 166, 52);
+
+        for (int i = 0; i < tabs.Items.Count; i++)
+        {
+            TabItem tab = tabs.Items[i] as TabItem;
+            if (tab == null) continue;
+
+            bool selected = tab.IsSelected;
+            tab.Template = CreateTabItemTemplate();
+            tab.Background = Brush(selected ? selectedBackground : normalBackground);
+            tab.Foreground = Brush(selected ? selectedForeground : normalForeground);
+            tab.BorderBrush = Brush(selected ? accent : border);
+            tab.BorderThickness = selected ? new Thickness(1, 2, 1, 0) : new Thickness(1, 1, 1, 0);
+            tab.Padding = new Thickness(12, 7, 12, 7);
+            tab.FontWeight = FontWeights.SemiBold;
+
+            TextBlock header = tab.Header as TextBlock;
+            if (header != null)
+            {
+                header.Foreground = Brush(selected ? selectedForeground : normalForeground);
+                header.FontWeight = FontWeights.SemiBold;
+                header.TextAlignment = TextAlignment.Center;
+            }
+        }
     }
 
     private static void ApplySectionCards(Window window, bool light)
     {
         TabControl tabs = FindTabControl(window);
         if (tabs == null) return;
+
         for (int i = 0; i < tabs.Items.Count; i++)
         {
             TabItem tab = tabs.Items[i] as TabItem;
@@ -320,6 +274,7 @@ public static class DuhBuhUITheme
         if (parent == null) return null;
         TabControl direct = parent as TabControl;
         if (direct != null) return direct;
+
         int count = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < count; i++)
         {
@@ -332,18 +287,26 @@ public static class DuhBuhUITheme
     private static void ApplyCardsToCategory(StackPanel category, bool light)
     {
         if (category.Tag is string && (string)category.Tag == "__duhbuh_cards_applied") return;
+
         List<UIElement> original = new List<UIElement>();
         for (int i = 0; i < category.Children.Count; i++) original.Add(category.Children[i]);
+
         bool hasHeading = false;
         for (int i = 0; i < original.Count; i++)
-            if (IsSectionHeading(original[i] as TextBlock)) { hasHeading = true; break; }
+        {
+            if (IsSectionHeading(original[i] as TextBlock))
+            {
+                hasHeading = true;
+                break;
+            }
+        }
         if (!hasHeading) return;
 
         category.Tag = "__duhbuh_cards_applied";
         category.Children.Clear();
+
         StackPanel currentContent = null;
         bool sawFirstHeading = false;
-
         for (int i = 0; i < original.Count; i++)
         {
             UIElement child = original[i];
@@ -369,6 +332,7 @@ public static class DuhBuhUITheme
                 category.Children.Add(currentCard);
                 continue;
             }
+
             if (sawFirstHeading && currentContent != null) currentContent.Children.Add(child);
             else category.Children.Add(child);
         }
@@ -398,7 +362,7 @@ public static class DuhBuhUITheme
         if (window == null) return false;
         SolidColorBrush brush = window.Background as SolidColorBrush;
         if (brush == null) return false;
-        Color c = brush.Color;
-        return c.R > 180 && c.G > 180 && c.B > 180;
+        Color color = brush.Color;
+        return color.R > 180 && color.G > 180 && color.B > 180;
     }
 }
