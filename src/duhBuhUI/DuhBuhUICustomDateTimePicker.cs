@@ -166,12 +166,27 @@ public sealed class DateTimePicker : Control
         TextBlock preview = new TextBlock { FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = Brush(Accent), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 14, 0, 12) };
         root.Children.Add(preview);
 
-        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        Grid buttons = new Grid { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 0, 0, 0) };
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        buttons.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         Button today = MakePopupButton("Today");
         Button now = MakePopupButton("Now");
         Button cancel = MakePopupButton("Cancel");
         Button ok = MakePopupButton("OK");
-        today.Margin = new Thickness(0, 0, 8, 0); now.Margin = new Thickness(0, 0, 8, 0); cancel.Margin = new Thickness(0, 0, 8, 0);
+        today.Margin = new Thickness(2, 0, 4, 0);
+        now.Margin = new Thickness(4, 0, 4, 0);
+        cancel.Margin = new Thickness(4, 0, 4, 0);
+        ok.Margin = new Thickness(4, 0, 2, 0);
+        Grid.SetColumn(today, 0);
+        Grid.SetColumn(now, 1);
+        Grid.SetColumn(cancel, 2);
+        Grid.SetColumn(ok, 3);
+        buttons.Children.Add(today);
+        buttons.Children.Add(now);
+        buttons.Children.Add(cancel);
+        buttons.Children.Add(ok);
         today.Click += delegate { DateTime t = DateTime.Today; initial = t; displayMonth = new DateTime(t.Year, t.Month, 1); rebuildCalendar(); };
         now.Click += delegate { DateTime t = DateTime.Now; initial = t; displayMonth = new DateTime(t.Year, t.Month, 1); hours.SelectedIndex = t.Hour; minutes.SelectedIndex = t.Minute; rebuildCalendar(); };
         cancel.Click += delegate { ClosePopup(); };
@@ -183,7 +198,6 @@ public sealed class DateTimePicker : Control
             SelectedDateTime = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, h, m, 0);
             ClosePopup();
         };
-        buttons.Children.Add(today); buttons.Children.Add(now); buttons.Children.Add(cancel); buttons.Children.Add(ok);
         root.Children.Add(buttons);
 
         rebuildCalendar = delegate
@@ -249,7 +263,7 @@ public sealed class DateTimePicker : Control
         d.ApplyTheme(_lightTheme); return d;
     }
     private static Button MakeNavButton(string text) { return new Button { Content = text, FontSize = 20, Padding = new Thickness(0, 0, 0, 2), BorderThickness = new Thickness(0), Background = new SolidColorBrush(Colors.Transparent), Foreground = new SolidColorBrush(Color.FromRgb(240, 242, 245)), Cursor = Cursors.Hand }; }
-    private Button MakePopupButton(string text) { return new Button { Content = text, FontSize = 13, Padding = new Thickness(12, 6, 12, 6), Background = Brush(PanelColor()), Foreground = Brush(TextColor()), BorderBrush = Brush(BorderColor()), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
+    private Button MakePopupButton(string text) { return new Button { Content = text, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = Brush(PanelColor()), Foreground = Brush(TextColor()), BorderBrush = Brush(BorderColor()), BorderThickness = new Thickness(1), HorizontalContentAlignment = HorizontalAlignment.Center, Cursor = Cursors.Hand }; }
 
     private void OwnerPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
