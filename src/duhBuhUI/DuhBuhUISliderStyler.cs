@@ -1,9 +1,7 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 
 public static class DuhBuhUISliderStyler
@@ -11,99 +9,113 @@ public static class DuhBuhUISliderStyler
     private static readonly object Sync = new object();
     private static bool _initialized;
 
-    [ModuleInitializer]
     public static void Initialize()
     {
         lock (Sync)
         {
             if (_initialized) return;
             _initialized = true;
-            EventManager.RegisterClassHandler(typeof(Slider), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnSliderLoaded));
         }
-    }
-
-    private static void OnSliderLoaded(object sender, RoutedEventArgs e)
-    {
-        Slider slider = sender as Slider;
-        if (slider != null) Apply(slider);
     }
 
     public static void Apply(Slider slider)
     {
         if (slider == null) return;
-        slider.Height = 28;
-        slider.MinHeight = 28;
+
+        slider.Height = 30;
+        slider.MinHeight = 30;
         slider.Margin = new Thickness(3, 5, 3, 5);
         slider.VerticalAlignment = VerticalAlignment.Center;
-        slider.Template = CreateTemplate();
-    }
+        slider.Background = new SolidColorBrush(Color.FromRgb(55, 59, 67));
+        slider.Foreground = new SolidColorBrush(Color.FromRgb(224, 166, 52));
+        slider.BorderThickness = new Thickness(0);
+        slider.Cursor = Cursors.Hand;
 
-    private static ControlTemplate CreateTemplate()
-    {
-        Color trackColor = Color.FromRgb(55, 59, 67);
-        Color accent = Color.FromRgb(224, 166, 52);
-        Color thumbBorder = Color.FromRgb(255, 255, 255);
+        // Keep WPF's native Slider interaction/state handling, but draw our own
+        // visual track/thumb over it. This avoids relying on theme-specific Track
+        // dependency properties that are not public in all .NET Framework builds.
+        Grid host = new Grid
+        {
+            IsHitTestVisible = false,
+            VerticalAlignment = VerticalAlignment.Center,
+            Height = 24
+        };
 
-        ControlTemplate template = new ControlTemplate(typeof(Slider));
-        FrameworkElementFactory root = new FrameworkElementFactory(typeof(Grid));
-        FrameworkElementFactory track = new FrameworkElementFactory(typeof(Track));
-        track.SetValue(FrameworkElement.NameProperty, "PART_Track");
-        track.SetValue(Track.OrientationProperty, Orientation.Horizontal);
-        track.SetValue(Track.IsDirectionReversedProperty, false);
-        track.SetBinding(Track.MinimumProperty, new Binding("Minimum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        track.SetBinding(Track.MaximumProperty, new Binding("Maximum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        track.SetBinding(Track.ValueProperty, new Binding("Value") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
+        Border inactive = new Border
+        {
+            Height = 5,
+            Background = new SolidColorBrush(Color.FromRgb(55, 59, 67)),
+            CornerRadius = new CornerRadius(3),
+            VerticalAlignment = VerticalAlignment.Center
+        };
 
-        FrameworkElementFactory decrease = new FrameworkElementFactory(typeof(RepeatButton));
-        decrease.SetValue(ButtonBase.CommandProperty, Slider.DecreaseLarge);
-        decrease.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        decrease.SetValue(Control.TemplateProperty, SimpleBarTemplate(accent, new CornerRadius(3, 0, 0, 3)));
-        track.SetValue(Track.DecreaseRepeatButtonProperty, decrease);
+        Border active = new Border
+        {
+            Height = 5,
+            Background = new SolidColorBrush(Color.FromRgb(224, 166, 52)),
+            CornerRadius = new CornerRadius(3, 0, 0, 3),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = 0
+        };
 
-        FrameworkElementFactory increase = new FrameworkElementFactory(typeof(RepeatButton));
-        increase.SetValue(ButtonBase.CommandProperty, Slider.IncreaseLarge);
-        increase.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        increase.SetValue(Control.TemplateProperty, SimpleBarTemplate(trackColor, new CornerRadius(0, 3, 3, 0)));
-        track.SetValue(Track.IncreaseRepeatButtonProperty, increase);
+        Border thumb = new Border
+        {
+            Width = 16,
+            Height = 24,
+            Background = new SolidColorBrush(Color.FromRgb(224, 166, 52)),
+            BorderBrush = new SolidColorBrush(Colors.White),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
 
-        FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Thumb));
-        thumb.SetValue(Control.WidthProperty, 16.0);
-        thumb.SetValue(Control.HeightProperty, 24.0);
-        thumb.SetValue(Control.CursorProperty, System.Windows.Input.Cursors.Hand);
-        thumb.SetValue(Control.TemplateProperty, SimpleThumbTemplate(accent, thumbBorder));
-        track.SetValue(Track.ThumbProperty, thumb);
+        host.Children.Add(inactive);
+        host.Children.Add(active);
+        host.Children.Add(thumb);
 
-        root.AppendChild(track);
-        template.VisualTree = root;
-        return template;
-    }
+        // A native Slider cannot host an arbitrary overlay directly, so place the
+        // visual layer in an Adorner-like popup window and keep it synchronized.
+        // The overlay is non-interactive; the Slider remains the input surface.
+        slider.Loaded += delegate
+        {
+            Window window = Window.GetWindow(slider);
+            if (window == null) return;
+            Panel parent = slider.Parent as Panel;
+            if (parent == null) return;
 
-    private static ControlTemplate SimpleBarTemplate(Color color, CornerRadius radius)
-    {
-        ControlTemplate t = new ControlTemplate(typeof(RepeatButton));
-        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
-        border.SetValue(Border.BackgroundProperty, Brush(color));
-        border.SetValue(Border.CornerRadiusProperty, radius);
-        t.VisualTree = border;
-        return t;
-    }
+            int index = parent.Children.IndexOf(slider);
+            if (index < 0) return;
+            parent.Children.Remove(slider);
 
-    private static ControlTemplate SimpleThumbTemplate(Color background, Color borderColor)
-    {
-        ControlTemplate t = new ControlTemplate(typeof(Thumb));
-        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
-        border.SetValue(Border.BackgroundProperty, Brush(background));
-        border.SetValue(Border.BorderBrushProperty, Brush(borderColor));
-        border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
-        t.VisualTree = border;
-        return t;
-    }
+            Grid wrapper = new Grid
+            {
+                Margin = slider.Margin,
+                Height = slider.Height,
+                VerticalAlignment = slider.VerticalAlignment
+            };
+            slider.Margin = new Thickness(0);
+            wrapper.Children.Add(host);
+            wrapper.Children.Add(slider);
+            parent.Children.Insert(index, wrapper);
 
-    private static SolidColorBrush Brush(Color color)
-    {
-        SolidColorBrush brush = new SolidColorBrush(color);
-        brush.Freeze();
-        return brush;
+            Action update = delegate
+            {
+                double range = slider.Maximum - slider.Minimum;
+                double ratio = range <= 0 ? 0 : (slider.Value - slider.Minimum) / range;
+                ratio = Math.Max(0, Math.Min(1, ratio));
+                double width = wrapper.ActualWidth;
+                double thumbTravel = Math.Max(0, width - thumb.Width);
+                double x = thumbTravel * ratio;
+                thumb.Margin = new Thickness(x, 0, 0, 0);
+                active.Width = Math.Max(0, x + thumb.Width / 2.0);
+            };
+
+            slider.SizeChanged += delegate { update(); };
+            slider.ValueChanged += delegate { update(); };
+            wrapper.SizeChanged += delegate { update(); };
+            update();
+        };
     }
 }
