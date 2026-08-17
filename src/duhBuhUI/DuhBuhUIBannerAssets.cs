@@ -11,7 +11,11 @@ public static class DuhBuhUIBannerAssets
 
     static DuhBuhUIBannerAssets()
     {
+        // Explicitly initialize all reusable UI control layers before the
+        // settings window begins constructing its controls. This avoids
+        // relying on module-initializer execution inside Streamer.bot.
         DuhBuhUITheme.Initialize();
+        DuhBuhUICheckBoxStyler.Initialize();
     }
 
     public static string DarkUri { get { return GetCachedUri("RTS-Dark-Banner.png", DarkUrl); } }
