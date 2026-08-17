@@ -38,7 +38,6 @@ public sealed class DuhBuhUICustomRadioGroup : Border
         Background = Brushes.Transparent;
         BorderThickness = new Thickness(0);
         Focusable = true;
-        KeyboardNavigation.IsTabStop = true;
         Margin = new Thickness(0, 5, 0, 0);
     }
 
