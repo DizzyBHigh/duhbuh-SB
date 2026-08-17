@@ -13,12 +13,13 @@ public sealed class DuhBuhUICustomDropdown : Control
     private int _selectedIndex = -1;
     private bool _focused;
 
-    private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
-    private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
-    private static readonly Color BorderColor = Color.FromRgb(75, 80, 90);
-    private static readonly Color TextColor = Color.FromRgb(240, 242, 245);
-    private static readonly Color AccentColor = Color.FromRgb(224, 166, 52);
-    private static readonly Color HoverColor = Color.FromRgb(58, 66, 76);
+    private Color _popupBackground = Color.FromRgb(28, 30, 34);
+    private Color _panelBackground = Color.FromRgb(36, 39, 45);
+    private Color _borderColor = Color.FromRgb(75, 80, 90);
+    private Color _textColor = Color.FromRgb(240, 242, 245);
+    private Color _accentColor = Color.FromRgb(224, 166, 52);
+    private Color _hoverColor = Color.FromRgb(60, 65, 74);
+    private Color _selectedTextColor = Colors.White;
 
     public event EventHandler SelectionChanged;
 
@@ -76,19 +77,49 @@ public sealed class DuhBuhUICustomDropdown : Control
         Height = 34;
         MinHeight = 34;
         MinWidth = 180;
-        Background = new SolidColorBrush(PanelBackground);
-        Foreground = new SolidColorBrush(TextColor);
-        BorderBrush = new SolidColorBrush(BorderColor);
+        Background = new SolidColorBrush(_panelBackground);
+        Foreground = new SolidColorBrush(_textColor);
+        BorderBrush = new SolidColorBrush(_borderColor);
         BorderThickness = new Thickness(1);
         Padding = new Thickness(9, 5, 34, 5);
+    }
+
+    // Theme colors are supplied explicitly by duhBuhUI. This keeps the
+    // control independent of WPF ComboBox styles/templates/resources.
+    public void ApplyTheme(bool light)
+    {
+        if (light)
+        {
+            _popupBackground = Color.FromRgb(246, 247, 249);
+            _panelBackground = Color.FromRgb(255, 255, 255);
+            _borderColor = Color.FromRgb(205, 210, 220);
+            _textColor = Color.FromRgb(30, 32, 38);
+            _accentColor = Color.FromRgb(176, 120, 22);
+            _hoverColor = Color.FromRgb(232, 235, 240);
+            _selectedTextColor = Colors.White;
+        }
+        else
+        {
+            _popupBackground = Color.FromRgb(28, 30, 34);
+            _panelBackground = Color.FromRgb(36, 39, 45);
+            _borderColor = Color.FromRgb(75, 80, 90);
+            _textColor = Color.FromRgb(240, 242, 245);
+            _accentColor = Color.FromRgb(224, 166, 52);
+            _hoverColor = Color.FromRgb(60, 65, 74);
+            _selectedTextColor = Colors.White;
+        }
+        Background = new SolidColorBrush(_panelBackground);
+        Foreground = new SolidColorBrush(_textColor);
+        BorderBrush = new SolidColorBrush(_borderColor);
+        InvalidateVisual();
     }
 
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        Color bg = BrushColor(Background, PanelBackground);
-        Color fg = BrushColor(Foreground, TextColor);
-        Color edge = _focused ? AccentColor : BrushColor(BorderBrush, BorderColor);
+        Color bg = BrushColor(Background, _panelBackground);
+        Color fg = BrushColor(Foreground, _textColor);
+        Color edge = _focused ? _accentColor : BrushColor(BorderBrush, _borderColor);
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -163,8 +194,8 @@ public sealed class DuhBuhUICustomDropdown : Control
             WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
             Owner = owner,
             ShowInTaskbar = false,
-            Background = new SolidColorBrush(PopupBackground),
-            Foreground = new SolidColorBrush(TextColor)
+            Background = new SolidColorBrush(_popupBackground),
+            Foreground = new SolidColorBrush(_textColor)
         };
 
         ScrollViewer scroll = new ScrollViewer
@@ -172,9 +203,9 @@ public sealed class DuhBuhUICustomDropdown : Control
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             MaxHeight = 340,
-            Background = new SolidColorBrush(PopupBackground)
+            Background = new SolidColorBrush(_popupBackground)
         };
-        StackPanel list = new StackPanel { Background = new SolidColorBrush(PopupBackground) };
+        StackPanel list = new StackPanel { Background = new SolidColorBrush(_popupBackground) };
         scroll.Content = list;
 
         for (int i = 0; i < _options.Length; i++)
@@ -184,19 +215,30 @@ public sealed class DuhBuhUICustomDropdown : Control
             {
                 Height = 32,
                 Padding = new Thickness(9, 5, 9, 5),
-                Background = new SolidColorBrush(i == _selectedIndex ? HoverColor : PopupBackground),
+                Background = new SolidColorBrush(i == _selectedIndex ? _accentColor : _popupBackground),
                 Cursor = Cursors.Hand
             };
             TextBlock text = new TextBlock
             {
                 Text = _options[i],
                 FontSize = 13,
-                Foreground = new SolidColorBrush(TextColor),
+                Foreground = new SolidColorBrush(i == _selectedIndex ? _selectedTextColor : _textColor),
                 VerticalAlignment = VerticalAlignment.Center
             };
             item.Child = text;
-            item.MouseEnter += delegate { if (index != _selectedIndex) item.Background = new SolidColorBrush(HoverColor); };
-            item.MouseLeave += delegate { item.Background = new SolidColorBrush(index == _selectedIndex ? HoverColor : PopupBackground); };
+            item.MouseEnter += delegate
+            {
+                if (index != _selectedIndex)
+                {
+                    item.Background = new SolidColorBrush(_hoverColor);
+                    text.Foreground = new SolidColorBrush(_textColor);
+                }
+            };
+            item.MouseLeave += delegate
+            {
+                item.Background = new SolidColorBrush(index == _selectedIndex ? _accentColor : _popupBackground);
+                text.Foreground = new SolidColorBrush(index == _selectedIndex ? _selectedTextColor : _textColor);
+            };
             item.MouseLeftButtonDown += delegate
             {
                 SelectedIndex = index;
@@ -207,8 +249,8 @@ public sealed class DuhBuhUICustomDropdown : Control
 
         popup.Content = new Border
         {
-            Background = new SolidColorBrush(PopupBackground),
-            BorderBrush = new SolidColorBrush(AccentColor),
+            Background = new SolidColorBrush(_popupBackground),
+            BorderBrush = new SolidColorBrush(_borderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(3),
             Child = scroll
