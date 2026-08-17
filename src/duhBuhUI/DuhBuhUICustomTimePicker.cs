@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -11,6 +12,8 @@ public sealed class TimePicker : Control
 {
     private TimeSpan? _selectedTime;
     private bool _focused;
+    private Popup _popup;
+    private Window _ownerWindow;
 
     private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
     private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
@@ -33,7 +36,6 @@ public sealed class TimePicker : Control
         }
     }
 
-    // Compatibility helpers for integrations that prefer text values.
     public string Value
     {
         get { return _selectedTime.HasValue ? _selectedTime.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture) : ""; }
@@ -66,7 +68,7 @@ public sealed class TimePicker : Control
         base.OnRender(dc);
         Color bg = BrushColor(Background, PanelBackground);
         Color fg = BrushColor(Foreground, TextColor);
-        Color edge = _focused ? AccentColor : BorderColor;
+        Color edge = (_focused || (_popup != null && _popup.IsOpen)) ? AccentColor : BorderColor;
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -106,13 +108,20 @@ public sealed class TimePicker : Control
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         Focus();
-        OpenTimePopup();
+        if (_popup != null && _popup.IsOpen) ClosePopup();
+        else OpenTimePopup();
         e.Handled = true;
         base.OnMouseLeftButtonDown(e);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Escape)
+        {
+            ClosePopup();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Enter || e.Key == Key.Space || e.Key == Key.Down)
         {
             OpenTimePopup();
@@ -124,18 +133,7 @@ public sealed class TimePicker : Control
 
     private void OpenTimePopup()
     {
-        Window owner = Window.GetWindow(this);
-        Window popup = new Window
-        {
-            Title = "Choose Time",
-            Width = 300,
-            Height = 270,
-            ResizeMode = ResizeMode.NoResize,
-            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-            Owner = owner,
-            Background = new SolidColorBrush(PopupBackground),
-            Foreground = new SolidColorBrush(TextColor)
-        };
+        if (_popup != null && _popup.IsOpen) return;
 
         TimeSpan initial = _selectedTime ?? new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
         int selectedHour = initial.Hours;
@@ -148,28 +146,40 @@ public sealed class TimePicker : Control
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(TextColor),
-            Margin = new Thickness(0, 0, 0, 12)
+            Margin = new Thickness(0, 0, 0, 16)
         });
 
         Grid pickerGrid = new Grid();
+        pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        pickerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+        pickerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
         TextBlock hourLabel = MakePickerLabel("Hour");
         TextBlock minuteLabel = MakePickerLabel("Minute");
+        Grid.SetRow(hourLabel, 0);
         Grid.SetColumn(hourLabel, 0);
+        Grid.SetRow(minuteLabel, 0);
         Grid.SetColumn(minuteLabel, 2);
         pickerGrid.Children.Add(hourLabel);
         pickerGrid.Children.Add(minuteLabel);
 
-        ComboBox hours = MakePickerCombo();
-        ComboBox minutes = MakePickerCombo();
-        for (int i = 0; i < 24; i++) hours.Items.Add(i.ToString("00", CultureInfo.InvariantCulture));
-        for (int i = 0; i < 60; i++) minutes.Items.Add(i.ToString("00", CultureInfo.InvariantCulture));
+        // Use the same custom dropdown control as the rest of duhBuhUI.
+        // There is deliberately no WPF ComboBox here.
+        DuhBuhUICustomDropdown hours = MakePickerDropdown();
+        DuhBuhUICustomDropdown minutes = MakePickerDropdown();
+        string[] hourOptions = new string[24];
+        string[] minuteOptions = new string[60];
+        for (int i = 0; i < 24; i++) hourOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
+        for (int i = 0; i < 60; i++) minuteOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
+        hours.Options = hourOptions;
+        minutes.Options = minuteOptions;
         hours.SelectedIndex = selectedHour;
         minutes.SelectedIndex = selectedMinute;
+        Grid.SetRow(hours, 1);
         Grid.SetColumn(hours, 0);
+        Grid.SetRow(minutes, 1);
         Grid.SetColumn(minutes, 2);
         pickerGrid.Children.Add(hours);
         pickerGrid.Children.Add(minutes);
@@ -181,9 +191,9 @@ public sealed class TimePicker : Control
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(TextColor),
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 18, 0, 0)
+            VerticalAlignment = VerticalAlignment.Center
         };
+        Grid.SetRow(colon, 1);
         Grid.SetColumn(colon, 1);
         pickerGrid.Children.Add(colon);
         root.Children.Add(pickerGrid);
@@ -202,7 +212,7 @@ public sealed class TimePicker : Control
         StackPanel buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right
+            HorizontalAlignment = HorizontalAlignment.Center
         };
         Button now = MakePopupButton("Now");
         Button cancel = MakePopupButton("Cancel");
@@ -215,18 +225,20 @@ public sealed class TimePicker : Control
             hours.SelectedIndex = n.Hour;
             minutes.SelectedIndex = n.Minute;
         };
-        cancel.Click += delegate { popup.Close(); };
+        cancel.Click += delegate { ClosePopup(); };
         ok.Click += delegate
         {
-            SelectedTime = new TimeSpan(hours.SelectedIndex, minutes.SelectedIndex, 0);
-            popup.Close();
+            int h = hours.SelectedIndex < 0 ? 0 : hours.SelectedIndex;
+            int m = minutes.SelectedIndex < 0 ? 0 : minutes.SelectedIndex;
+            SelectedTime = new TimeSpan(h, m, 0);
+            ClosePopup();
         };
         buttons.Children.Add(now);
         buttons.Children.Add(cancel);
         buttons.Children.Add(ok);
         root.Children.Add(buttons);
 
-        SelectionChangedEventHandler updatePreview = delegate
+        EventHandler updatePreview = delegate
         {
             int h = hours.SelectedIndex < 0 ? 0 : hours.SelectedIndex;
             int m = minutes.SelectedIndex < 0 ? 0 : minutes.SelectedIndex;
@@ -235,8 +247,74 @@ public sealed class TimePicker : Control
         hours.SelectionChanged += updatePreview;
         minutes.SelectionChanged += updatePreview;
 
-        popup.Content = root;
-        popup.ShowDialog();
+        Border surface = new Border
+        {
+            Background = new SolidColorBrush(PopupBackground),
+            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Child = root
+        };
+
+        _ownerWindow = Window.GetWindow(this);
+        if (_ownerWindow != null)
+            _ownerWindow.PreviewMouseDown += OwnerPreviewMouseDown;
+
+        _popup = new Popup
+        {
+            PlacementTarget = this,
+            Placement = PlacementMode.Bottom,
+            HorizontalOffset = 0,
+            VerticalOffset = 6,
+            AllowsTransparency = true,
+            StaysOpen = true,
+            Focusable = false,
+            Child = surface,
+            Width = 360
+        };
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
+    }
+
+    private void OwnerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_popup == null || !_popup.IsOpen) return;
+        DependencyObject source = e.OriginalSource as DependencyObject;
+        if (source != null && IsDescendantOf(source)) return;
+        ClosePopup();
+    }
+
+    private bool IsDescendantOf(DependencyObject source)
+    {
+        DependencyObject current = source;
+        while (current != null)
+        {
+            if (ReferenceEquals(current, this)) return true;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return false;
+    }
+
+    private void ClosePopup()
+    {
+        if (_popup == null) return;
+        _popup.IsOpen = false;
+    }
+
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        if (_ownerWindow != null)
+        {
+            _ownerWindow.PreviewMouseDown -= OwnerPreviewMouseDown;
+            _ownerWindow = null;
+        }
+        if (_popup != null)
+        {
+            _popup.Closed -= PopupClosed;
+            _popup = null;
+        }
+        InvalidateVisual();
     }
 
     private static TextBlock MakePickerLabel(string text)
@@ -247,32 +325,21 @@ public sealed class TimePicker : Control
             FontSize = 11,
             Foreground = new SolidColorBrush(SecondaryTextColor),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 4)
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 5)
         };
     }
 
-    private static ComboBox MakePickerCombo()
+    private static DuhBuhUICustomDropdown MakePickerDropdown()
     {
-        ComboBox combo = new ComboBox
+        DuhBuhUICustomDropdown dropdown = new DuhBuhUICustomDropdown
         {
-            MinWidth = 90,
+            MinWidth = 120,
             Height = 32,
-            FontSize = 14,
-            Background = new SolidColorBrush(PanelBackground),
-            Foreground = new SolidColorBrush(TextColor),
-            BorderBrush = new SolidColorBrush(BorderColor),
-            BorderThickness = new Thickness(1)
+            Margin = new Thickness(0, 0, 0, 0)
         };
-        combo.ItemContainerStyle = new Style(typeof(ComboBoxItem))
-        {
-            Setters =
-            {
-                new Setter(Control.ForegroundProperty, new SolidColorBrush(TextColor)),
-                new Setter(Control.BackgroundProperty, new SolidColorBrush(PanelBackground)),
-                new Setter(Control.PaddingProperty, new Thickness(8, 5, 8, 5))
-            }
-        };
-        return combo;
+        dropdown.ApplyTheme(false);
+        return dropdown;
     }
 
     private static Button MakePopupButton(string text)

@@ -2,15 +2,18 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// duhBuhUI custom date picker. The control owns the field rendering and
-// interaction; WPF is used only as the windowing/input foundation.
+// duhBuhUI custom date picker. The control owns the field and popup
+// presentation; WPF is used only as the window/input foundation.
 public sealed class DatePicker : Control
 {
     private DateTime? _selectedDate;
     private bool _focused;
+    private Popup _popup;
+    private Window _ownerWindow;
 
     private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
     private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
@@ -54,7 +57,7 @@ public sealed class DatePicker : Control
         base.OnRender(dc);
         Color bg = BrushColor(Background, PanelBackground);
         Color fg = BrushColor(Foreground, TextColor);
-        Color edge = _focused ? AccentColor : BorderColor;
+        Color edge = (_focused || (_popup != null && _popup.IsOpen)) ? AccentColor : BorderColor;
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -94,13 +97,20 @@ public sealed class DatePicker : Control
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         Focus();
-        OpenCalendar();
+        if (_popup != null && _popup.IsOpen) ClosePopup();
+        else OpenCalendar();
         e.Handled = true;
         base.OnMouseLeftButtonDown(e);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Escape)
+        {
+            ClosePopup();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Enter || e.Key == Key.Space || e.Key == Key.Down)
         {
             OpenCalendar();
@@ -112,20 +122,7 @@ public sealed class DatePicker : Control
 
     private void OpenCalendar()
     {
-        Window owner = Window.GetWindow(this);
-        Window popup = new Window
-        {
-            Title = "Choose Date",
-            Width = 340,
-            SizeToContent = SizeToContent.Height,
-            MinHeight = 430,
-            MaxHeight = 520,
-            ResizeMode = ResizeMode.NoResize,
-            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-            Owner = owner,
-            Background = new SolidColorBrush(PopupBackground),
-            Foreground = new SolidColorBrush(TextColor)
-        };
+        if (_popup != null && _popup.IsOpen) return;
 
         DateTime displayMonth = new DateTime(
             (_selectedDate ?? DateTime.Today).Year,
@@ -139,7 +136,7 @@ public sealed class DatePicker : Control
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(TextColor),
-            Margin = new Thickness(0, 0, 0, 10)
+            Margin = new Thickness(0, 0, 0, 14)
         });
 
         Border calendarBorder = new Border
@@ -147,7 +144,7 @@ public sealed class DatePicker : Control
             Background = new SolidColorBrush(PanelBackground),
             BorderBrush = new SolidColorBrush(BorderColor),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
+            CornerRadius = new CornerRadius(5),
             Padding = new Thickness(10)
         };
 
@@ -164,8 +161,8 @@ public sealed class DatePicker : Control
         Button today = MakePopupButton("Today");
         Button cancel = MakePopupButton("Cancel");
         today.Margin = new Thickness(0, 0, 8, 0);
-        today.Click += delegate { SelectedDate = DateTime.Today; popup.Close(); };
-        cancel.Click += delegate { popup.Close(); };
+        today.Click += delegate { SelectedDate = DateTime.Today; ClosePopup(); };
+        cancel.Click += delegate { ClosePopup(); };
         buttons.Children.Add(today);
         buttons.Children.Add(cancel);
         root.Children.Add(buttons);
@@ -233,45 +230,46 @@ public sealed class DatePicker : Control
                 if (dayNumber < 1 || dayNumber > daysInMonth) continue;
 
                 DateTime date = new DateTime(displayMonth.Year, displayMonth.Month, dayNumber);
-                Button day = new Button
+                bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                bool todayDate = date.Date == DateTime.Today;
+
+                Border day = new Border
                 {
-                    Content = dayNumber.ToString(CultureInfo.InvariantCulture),
-                    FontSize = 12,
                     Margin = new Thickness(1),
-                    Padding = new Thickness(0),
-                    BorderThickness = new Thickness(0),
-                    Background = new SolidColorBrush(Colors.Transparent),
-                    Foreground = new SolidColorBrush(TextColor),
+                    Background = new SolidColorBrush(selected ? AccentColor : Colors.Transparent),
+                    BorderBrush = new SolidColorBrush(todayDate ? AccentColor : Colors.Transparent),
+                    BorderThickness = new Thickness(todayDate ? 1 : 0),
+                    CornerRadius = new CornerRadius(2),
                     Cursor = Cursors.Hand,
                     Tag = date
                 };
 
-                if (_selectedDate.HasValue && _selectedDate.Value.Date == date.Date)
+                TextBlock dayText = new TextBlock
                 {
-                    day.Background = new SolidColorBrush(AccentColor);
-                    day.Foreground = new SolidColorBrush(Color.FromRgb(25, 27, 31));
-                    day.FontWeight = FontWeights.SemiBold;
-                }
-                else if (date.Date == DateTime.Today)
-                {
-                    day.BorderBrush = new SolidColorBrush(AccentColor);
-                    day.BorderThickness = new Thickness(1);
-                }
+                    Text = dayNumber.ToString(CultureInfo.InvariantCulture),
+                    FontSize = 12,
+                    FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal,
+                    Foreground = new SolidColorBrush(selected ? Color.FromRgb(25, 27, 31) : TextColor),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Center
+                };
+                day.Child = dayText;
 
                 day.MouseEnter += delegate
                 {
-                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
-                    if (!selected) day.Background = new SolidColorBrush(HoverColor);
+                    bool isSelected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    if (!isSelected) day.Background = new SolidColorBrush(HoverColor);
                 };
                 day.MouseLeave += delegate
                 {
-                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
-                    day.Background = new SolidColorBrush(selected ? AccentColor : Colors.Transparent);
+                    bool isSelected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    day.Background = new SolidColorBrush(isSelected ? AccentColor : Colors.Transparent);
                 };
-                day.Click += delegate
+                day.MouseLeftButtonDown += delegate
                 {
                     SelectedDate = (DateTime)day.Tag;
-                    popup.Close();
+                    ClosePopup();
                 };
 
                 Grid.SetColumn(day, index % 7);
@@ -283,8 +281,75 @@ public sealed class DatePicker : Control
         };
 
         rebuild();
-        popup.Content = root;
-        popup.ShowDialog();
+
+        Border surface = new Border
+        {
+            Background = new SolidColorBrush(PopupBackground),
+            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Child = root
+        };
+
+        _ownerWindow = Window.GetWindow(this);
+        if (_ownerWindow != null)
+            _ownerWindow.PreviewMouseDown += OwnerPreviewMouseDown;
+
+        _popup = new Popup
+        {
+            PlacementTarget = this,
+            Placement = PlacementMode.Bottom,
+            HorizontalOffset = 0,
+            VerticalOffset = 6,
+            AllowsTransparency = true,
+            StaysOpen = true,
+            Focusable = false,
+            Child = surface,
+            Width = 340
+        };
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
+    }
+
+    private void OwnerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_popup == null || !_popup.IsOpen) return;
+        DependencyObject source = e.OriginalSource as DependencyObject;
+        if (source != null && IsDescendantOf(source)) return;
+        ClosePopup();
+    }
+
+    private bool IsDescendantOf(DependencyObject source)
+    {
+        DependencyObject current = source;
+        while (current != null)
+        {
+            if (ReferenceEquals(current, this)) return true;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return false;
+    }
+
+    private void ClosePopup()
+    {
+        if (_popup == null) return;
+        _popup.IsOpen = false;
+    }
+
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        if (_ownerWindow != null)
+        {
+            _ownerWindow.PreviewMouseDown -= OwnerPreviewMouseDown;
+            _ownerWindow = null;
+        }
+        if (_popup != null)
+        {
+            _popup.Closed -= PopupClosed;
+            _popup = null;
+        }
+        InvalidateVisual();
     }
 
     private static Button MakeNavButton(string text)
