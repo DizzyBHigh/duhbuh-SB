@@ -2,8 +2,8 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Markup;
 
 public static class DuhBuhUICheckBoxStyler
 {
@@ -20,7 +20,6 @@ public static class DuhBuhUICheckBoxStyler
     {
         CheckBox checkBox = sender as CheckBox;
         if (checkBox == null) return;
-
         Window window = Window.GetWindow(checkBox);
         if (window == null) return;
 
@@ -43,16 +42,11 @@ public static class DuhBuhUICheckBoxStyler
     private static SolidColorBrush GetBrush(FrameworkElement element, string key, Color fallback)
     {
         object value = null;
-        if (element != null && element.Resources != null && element.Resources.Contains(key))
-            value = element.Resources[key];
-
+        if (element != null && element.Resources != null && element.Resources.Contains(key)) value = element.Resources[key];
         Window window = element as Window;
-        if (value == null && window != null && window.Resources != null && window.Resources.Contains(key))
-            value = window.Resources[key];
-
+        if (value == null && window != null && window.Resources != null && window.Resources.Contains(key)) value = window.Resources[key];
         SolidColorBrush brush = value as SolidColorBrush;
-        if (brush != null) return brush;
-        return Brush(fallback);
+        return brush ?? Brush(fallback);
     }
 
     private static SolidColorBrush Brush(Color color)
@@ -60,6 +54,15 @@ public static class DuhBuhUICheckBoxStyler
         SolidColorBrush brush = new SolidColorBrush(color);
         brush.Freeze();
         return brush;
+    }
+
+    private static Binding TemplatedBinding(string path)
+    {
+        return new Binding(path)
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent),
+            Mode = BindingMode.OneWay
+        };
     }
 
     private static ControlTemplate CreateCheckBoxTemplate(SolidColorBrush accent, SolidColorBrush border)
@@ -70,6 +73,7 @@ public static class DuhBuhUICheckBoxStyler
         panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory box = new FrameworkElementFactory(typeof(Border));
+        box.SetValue(FrameworkElement.NameProperty, "box");
         box.SetValue(Border.WidthProperty, 16.0);
         box.SetValue(Border.HeightProperty, 16.0);
         box.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
@@ -80,6 +84,7 @@ public static class DuhBuhUICheckBoxStyler
         box.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory check = new FrameworkElementFactory(typeof(TextBlock));
+        check.SetValue(FrameworkElement.NameProperty, "check");
         check.SetValue(TextBlock.TextProperty, "✓");
         check.SetValue(TextBlock.FontSizeProperty, 12.0);
         check.SetValue(TextBlock.FontWeightProperty, FontWeights.Bold);
@@ -91,12 +96,12 @@ public static class DuhBuhUICheckBoxStyler
         panel.AppendChild(box);
 
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
-        content.SetBinding(ContentPresenter.ContentTemplateProperty, new TemplateBindingExtension(ContentControl.ContentTemplateProperty));
-        content.SetBinding(ContentPresenter.ContentStringFormatProperty, new TemplateBindingExtension(ContentControl.ContentStringFormatProperty));
-        content.SetBinding(ContentPresenter.ForegroundProperty, new TemplateBindingExtension(Control.ForegroundProperty));
-        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, new TemplateBindingExtension(Control.HorizontalContentAlignmentProperty));
-        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, new TemplateBindingExtension(Control.VerticalContentAlignmentProperty));
+        content.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
+        content.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
+        content.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
+        content.SetBinding(TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
+        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
         panel.AppendChild(content);
 
         template.VisualTree = panel;
@@ -114,7 +119,6 @@ public static class DuhBuhUICheckBoxStyler
         Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55));
         template.Triggers.Add(disabledTrigger);
-
         return template;
     }
 
@@ -126,6 +130,7 @@ public static class DuhBuhUICheckBoxStyler
         panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory track = new FrameworkElementFactory(typeof(Border));
+        track.SetValue(FrameworkElement.NameProperty, "track");
         track.SetValue(Border.WidthProperty, 42.0);
         track.SetValue(Border.HeightProperty, 22.0);
         track.SetValue(Border.CornerRadiusProperty, new CornerRadius(11));
@@ -136,6 +141,7 @@ public static class DuhBuhUICheckBoxStyler
         track.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Border));
+        thumb.SetValue(FrameworkElement.NameProperty, "thumb");
         thumb.SetValue(Border.WidthProperty, 16.0);
         thumb.SetValue(Border.HeightProperty, 16.0);
         thumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
@@ -147,12 +153,12 @@ public static class DuhBuhUICheckBoxStyler
         panel.AppendChild(track);
 
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
-        content.SetBinding(ContentPresenter.ContentTemplateProperty, new TemplateBindingExtension(ContentControl.ContentTemplateProperty));
-        content.SetBinding(ContentPresenter.ContentStringFormatProperty, new TemplateBindingExtension(ContentControl.ContentStringFormatProperty));
-        content.SetBinding(ContentPresenter.ForegroundProperty, new TemplateBindingExtension(Control.ForegroundProperty));
-        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, new TemplateBindingExtension(Control.HorizontalContentAlignmentProperty));
-        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, new TemplateBindingExtension(Control.VerticalContentAlignmentProperty));
+        content.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
+        content.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
+        content.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
+        content.SetBinding(TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
+        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
         panel.AppendChild(content);
 
         template.VisualTree = panel;
@@ -169,7 +175,6 @@ public static class DuhBuhUICheckBoxStyler
         Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55));
         template.Triggers.Add(disabledTrigger);
-
         return template;
     }
 }
