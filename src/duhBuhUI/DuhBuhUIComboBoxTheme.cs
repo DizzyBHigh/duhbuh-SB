@@ -227,7 +227,7 @@ public static class DuhBuhUIComboBoxTheme
             Property = Selector.IsSelectedProperty,
             Value = true
         };
-        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Color.FromRgb(58, 66, 76))));
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
         selected.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
         style.Triggers.Add(selected);
 
