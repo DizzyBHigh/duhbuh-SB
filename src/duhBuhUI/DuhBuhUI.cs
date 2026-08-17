@@ -136,7 +136,37 @@ public sealed class DuhBuhUI
                 else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
                 else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Key == "duhbuh_overlay_lurks_position" && d.Options.Length == 9) { Grid group = new Grid { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int r = 0; r < 3; r++) { group.RowDefinitions.Add(new RowDefinition()); group.ColumnDefinitions.Add(new ColumnDefinition()); } for (int j = 0; j < d.Options.Length; j++) { RadioButton radio = new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }; Grid.SetRow(radio, j / 3); Grid.SetColumn(radio, j % 3); group.Children.Add(radio); } box.Children.Insert(1, group); } else { StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); } panel.Children.Add(box); }
                 else if (d.Type == "color") BuildColorControl(panel, d, theme);
-                else if (d.Type == "date" || d.Type == "time" || d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Type == "date" || d.Type == "datetime") box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); if (d.Type == "time" || d.Type == "datetime") box.Children.Insert(2, new TextBox { Tag = d.Type == "datetime" ? d.Key + "::time" : d.Key, Text = ExtractTime(current), MinWidth = 100, Margin = new Thickness(0, 4, 0, 0) }); panel.Children.Add(box); }
+                else if (d.Type == "date")
+                {
+                    StackPanel box = FieldBox(theme, d.Description);
+                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+                    string current = Read(d.Key, (string)d.DefaultValue);
+                    box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) });
+                    panel.Children.Add(box);
+                }
+                else if (d.Type == "time")
+                {
+                    StackPanel box = FieldBox(theme, d.Description);
+                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+                    string current = Read(d.Key, (string)d.DefaultValue);
+                    TimeSpan parsedTime;
+                    TimeSpan? selected = TimeSpan.TryParseExact(current, new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null;
+                    box.Children.Insert(1, new TimePicker { Tag = d.Key, SelectedTime = selected });
+                    panel.Children.Add(box);
+                }
+                else if (d.Type == "datetime")
+                {
+                    StackPanel box = FieldBox(theme, d.Description);
+                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+                    string current = Read(d.Key, (string)d.DefaultValue);
+                    DatePicker date = new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) };
+                    TimeSpan parsedTime;
+                    TimeSpan? selectedTime = TimeSpan.TryParseExact(ExtractTime(current), new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null;
+                    TimePicker time = new TimePicker { Tag = d.Key + "::time", SelectedTime = selectedTime, Margin = new Thickness(0, 4, 0, 0) };
+                    box.Children.Insert(1, date);
+                    box.Children.Insert(2, time);
+                    panel.Children.Add(box);
+                }
                 continue;
             }
             ButtonDefinition buttonDefinition = elements[e] as ButtonDefinition;
@@ -174,7 +204,7 @@ public sealed class DuhBuhUI
         string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C7576" };
         for (int i = 0; i < colours.Length; i++) { string colour = colours[i]; Button swatchButton = new Button { Width = 38, Height = 32, Margin = new Thickness(3), Tag = colour, ToolTip = colour, Padding = new Thickness(0) }; swatchButton.Background = BrushFromHex(colour); swatchButton.BorderBrush = ThemeBrush(theme, "SecondaryText"); swatchButton.Click += delegate(object sender, RoutedEventArgs e) { string selected = (string)((Button)sender).Tag; custom.Text = selected; SetPreview(preview, previewText, selected); }; palette.Children.Add(swatchButton); }
         root.Children.Add(palette);
-        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) }; TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; custom = new TextBox { Text = initial, Width = 150, VerticalContentAlignment = VerticalAlignment.Center }; Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) }; customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
+        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) }; TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; custom = new TextBox { Text = initial, Width = 150, VerticalContentContentAlignment = VerticalAlignment.Center }; Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) }; customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
         custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
         StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right }; Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) }; ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); }; buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
     }
@@ -191,6 +221,131 @@ public sealed class DuhBuhUI
     private bool Read(string key, bool fallback) { try { bool? value = _getBool(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
     private int Read(string key, int fallback) { try { int? value = _getInt(key, true); return value.HasValue ? value.Value : fallback; } catch { return fallback; } }
     private string Read(string key, string fallback) { try { string value = _getString(key, true); return value ?? fallback; } catch { return fallback; } }
-    private void Save(DockPanel root) { foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; SaveTagged(root, item.Key); } _logInfo("[duhBuhUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + "."); }
-    private void SaveTagged(DependencyObject parent, string key) { foreach (object childObject in LogicalTreeHelper.GetChildren(parent)) { DependencyObject dep = childObject as DependencyObject; if (dep == null) continue; FrameworkElement fe = dep as FrameworkElement; if (fe != null && Equals(fe.Tag, key)) { DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider; if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true); CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true); Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true); TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true); ComboBox combo = fe as ComboBox; if (combo != null) _setGlobal(key, combo.SelectedItem == null ? "" : combo.SelectedItem.ToString(), true); StackPanel group = fe as StackPanel; if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { RadioButton radio = group.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); } Grid gridGroup = fe as Grid; if (gridGroup != null && gridGroup.Tag != null) for (int i = 0; i < gridGroup.Children.Count; i++) { RadioButton radio = gridGroup.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); } DatePicker date = fe as DatePicker; if (date != null) { string current = Read(key, ""); string time = ExtractTime(current); string dateText = date.SelectedDate.HasValue ? date.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : ""; if (!string.IsNullOrWhiteSpace(time) && time != current && current.IndexOf(':') >= 0) _setGlobal(key, dateText + " " + time, true); else _setGlobal(key, dateText, true); } if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { TextBox colorBox = group.Children[i] as TextBox; if (colorBox != null) { string color = NormalizeColor(colorBox.Text); if (color != "") { _setGlobal(key, color, true); break; } } } } SaveTagged(dep, key); } }
+
+    private void Save(DockPanel root)
+    {
+        foreach (KeyValuePair<string, object> item in _defaults)
+        {
+            if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue;
+            SaveTagged(root, item.Key);
+        }
+        _logInfo("[duhBuhUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + ".");
+    }
+
+    private void SaveTagged(DependencyObject parent, string key)
+    {
+        foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
+        {
+            DependencyObject dep = childObject as DependencyObject;
+            if (dep == null) continue;
+
+            FrameworkElement fe = dep as FrameworkElement;
+            if (fe != null && Equals(fe.Tag, key))
+            {
+                DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider;
+                if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
+
+                CheckBox cb = fe as CheckBox;
+                if (cb != null) _setGlobal(key, cb.IsChecked == true, true);
+
+                Slider sl = fe as Slider;
+                if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true);
+
+                TextBox tb = fe as TextBox;
+                if (tb != null) _setGlobal(key, tb.Text, true);
+
+                ComboBox combo = fe as ComboBox;
+                if (combo != null) _setGlobal(key, combo.SelectedItem == null ? "" : combo.SelectedItem.ToString(), true);
+
+                TimePicker timePicker = fe as TimePicker;
+                if (timePicker != null)
+                {
+                    string timeText = timePicker.SelectedTime.HasValue ? timePicker.SelectedTime.Value.ToString("hh\\:mm", CultureInfo.InvariantCulture) : "";
+                    DatePicker siblingDate = FindTaggedDatePicker(parent, key);
+                    if (siblingDate != null)
+                    {
+                        string dateText = siblingDate.SelectedDate.HasValue ? siblingDate.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
+                        _setGlobal(key, string.IsNullOrWhiteSpace(dateText) ? timeText : dateText + " " + timeText, true);
+                    }
+                    else
+                    {
+                        _setGlobal(key, timeText, true);
+                    }
+                }
+
+                StackPanel group = fe as StackPanel;
+                if (group != null && group.Tag != null)
+                    for (int i = 0; i < group.Children.Count; i++)
+                    {
+                        RadioButton radio = group.Children[i] as RadioButton;
+                        if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true);
+                    }
+
+                Grid gridGroup = fe as Grid;
+                if (gridGroup != null && gridGroup.Tag != null)
+                    for (int i = 0; i < gridGroup.Children.Count; i++)
+                    {
+                        RadioButton radio = gridGroup.Children[i] as RadioButton;
+                        if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true);
+                    }
+
+                DatePicker date = fe as DatePicker;
+                if (date != null)
+                {
+                    string dateText = date.SelectedDate.HasValue ? date.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
+                    TimePicker siblingTime = FindTaggedTimePicker(parent, key + "::time");
+                    if (siblingTime != null)
+                    {
+                        string timeText = siblingTime.SelectedTime.HasValue ? siblingTime.SelectedTime.Value.ToString("hh\\:mm", CultureInfo.InvariantCulture) : "";
+                        _setGlobal(key, string.IsNullOrWhiteSpace(dateText) ? timeText : dateText + " " + timeText, true);
+                    }
+                    else
+                    {
+                        _setGlobal(key, dateText, true);
+                    }
+                }
+
+                if (group != null && group.Tag != null)
+                    for (int i = 0; i < group.Children.Count; i++)
+                    {
+                        TextBox colorBox = group.Children[i] as TextBox;
+                        if (colorBox != null)
+                        {
+                            string color = NormalizeColor(colorBox.Text);
+                            if (color != "") { _setGlobal(key, color, true); break; }
+                        }
+                    }
+            }
+
+            SaveTagged(dep, key);
+        }
+    }
+
+    private DatePicker FindTaggedDatePicker(DependencyObject parent, string key)
+    {
+        foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
+        {
+            DependencyObject child = childObject as DependencyObject;
+            if (child == null) continue;
+            DatePicker date = child as DatePicker;
+            if (date != null && Equals(date.Tag, key)) return date;
+            DatePicker nested = FindTaggedDatePicker(child, key);
+            if (nested != null) return nested;
+        }
+        return null;
+    }
+
+    private TimePicker FindTaggedTimePicker(DependencyObject parent, string key)
+    {
+        foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
+        {
+            DependencyObject child = childObject as DependencyObject;
+            if (child == null) continue;
+            TimePicker time = child as TimePicker;
+            if (time != null && Equals(time.Tag, key)) return time;
+            TimePicker nested = FindTaggedTimePicker(child, key);
+            if (nested != null) return nested;
+        }
+        return null;
+    }
 }
