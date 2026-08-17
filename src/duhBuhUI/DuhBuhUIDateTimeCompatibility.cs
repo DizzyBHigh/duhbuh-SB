@@ -11,6 +11,7 @@ using System.Windows.Controls;
 public static class DuhBuhUIDateTimeCompatibility
 {
     private static readonly HashSet<Window> Processed = new HashSet<Window>();
+    private const string StorageTag = "__duhbuh_datetime_storage";
 
     [ModuleInitializer]
     public static void Initialize()
@@ -30,7 +31,7 @@ public static class DuhBuhUIDateTimeCompatibility
     private static void ReplaceDateTimePairs(DependencyObject root)
     {
         StackPanel panel = root as StackPanel;
-        if (panel != null) ReplaceInPanel(panel);
+        if (panel != null && !Equals(panel.Tag, StorageTag)) ReplaceInPanel(panel);
 
         foreach (object childObject in LogicalTreeHelper.GetChildren(root))
         {
@@ -66,8 +67,7 @@ public static class DuhBuhUIDateTimeCompatibility
                 initialDate.Year, initialDate.Month, initialDate.Day, hour, minute, 0);
 
             Window owner = Window.GetWindow(panel);
-            bool light = IsLightWindow(owner);
-            combined.ApplyTheme(light);
+            combined.ApplyTheme(IsLightWindow(owner));
 
             combined.SelectedDateTimeChanged += delegate
             {
@@ -86,15 +86,13 @@ public static class DuhBuhUIDateTimeCompatibility
             StackPanel storage = new StackPanel
             {
                 Visibility = Visibility.Collapsed,
-                Tag = "__duhbuh_datetime_storage"
+                Tag = StorageTag
             };
             storage.Children.Add(date);
             storage.Children.Add(time);
             panel.Children.Insert(dateIndex, combined);
             panel.Children.Add(storage);
 
-            // The panel has changed; do not attempt to process the controls we
-            // just moved on this pass.
             i = dateIndex;
         }
     }
