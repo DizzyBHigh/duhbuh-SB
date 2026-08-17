@@ -8,8 +8,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 
 // Reusable checkbox/toggle visuals. Uses bindings rather than named template
-targets because WPF can reject TargetName lookups when a template is applied
-programmatically before the visual tree is loaded.
+// targets because WPF can reject TargetName lookups when a template is applied
+// programmatically before the visual tree is loaded.
 public static class DuhBuhUICheckBoxStyler
 {
     private static bool _initialized;
