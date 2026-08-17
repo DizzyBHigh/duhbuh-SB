@@ -230,42 +230,43 @@ public sealed class DatePicker : Control
                 if (dayNumber < 1 || dayNumber > daysInMonth) continue;
 
                 DateTime date = new DateTime(displayMonth.Year, displayMonth.Month, dayNumber);
-                Button day = new Button
+                bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                bool todayDate = date.Date == DateTime.Today;
+
+                Border day = new Border
                 {
-                    Content = dayNumber.ToString(CultureInfo.InvariantCulture),
-                    FontSize = 12,
                     Margin = new Thickness(1),
-                    Padding = new Thickness(0),
-                    BorderThickness = new Thickness(0),
-                    Background = new SolidColorBrush(Colors.Transparent),
-                    Foreground = new SolidColorBrush(TextColor),
+                    Background = new SolidColorBrush(selected ? AccentColor : Colors.Transparent),
+                    BorderBrush = new SolidColorBrush(todayDate ? AccentColor : Colors.Transparent),
+                    BorderThickness = new Thickness(todayDate ? 1 : 0),
+                    CornerRadius = new CornerRadius(2),
                     Cursor = Cursors.Hand,
                     Tag = date
                 };
 
-                if (_selectedDate.HasValue && _selectedDate.Value.Date == date.Date)
+                TextBlock dayText = new TextBlock
                 {
-                    day.Background = new SolidColorBrush(AccentColor);
-                    day.Foreground = new SolidColorBrush(Color.FromRgb(25, 27, 31));
-                    day.FontWeight = FontWeights.SemiBold;
-                }
-                else if (date.Date == DateTime.Today)
-                {
-                    day.BorderBrush = new SolidColorBrush(AccentColor);
-                    day.BorderThickness = new Thickness(1);
-                }
+                    Text = dayNumber.ToString(CultureInfo.InvariantCulture),
+                    FontSize = 12,
+                    FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal,
+                    Foreground = new SolidColorBrush(selected ? Color.FromRgb(25, 27, 31) : TextColor),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextAlignment = TextAlignment.Center
+                };
+                day.Child = dayText;
 
                 day.MouseEnter += delegate
                 {
-                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
-                    if (!selected) day.Background = new SolidColorBrush(HoverColor);
+                    bool isSelected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    if (!isSelected) day.Background = new SolidColorBrush(HoverColor);
                 };
                 day.MouseLeave += delegate
                 {
-                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
-                    day.Background = new SolidColorBrush(selected ? AccentColor : Colors.Transparent);
+                    bool isSelected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    day.Background = new SolidColorBrush(isSelected ? AccentColor : Colors.Transparent);
                 };
-                day.Click += delegate
+                day.MouseLeftButtonDown += delegate
                 {
                     SelectedDate = (DateTime)day.Tag;
                     ClosePopup();
