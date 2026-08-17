@@ -1,21 +1,30 @@
+using System;
+using System.Collections.Generic;
 using System.Windows.Controls;
 
-// Compatibility shim retained while existing integrations move to the
-// custom CheckBox control. Visuals and interaction are now owned by CheckBox.
+// Compatibility/registration shim for the custom CheckBox control.
+// Registered keys render as square checkboxes; ordinary toggle keys render as switches.
 public static class DuhBuhUICheckBoxStyler
 {
-    public static void Initialize()
-    {
-        // Intentionally empty. Custom CheckBox owns its own rendering.
-    }
+    private static readonly List<string> _checkboxKeys = new List<string>();
+
+    public static void Initialize() { }
 
     public static void RegisterCheckboxKey(string key)
     {
-        // Retained for source compatibility with older integrations.
+        if (string.IsNullOrEmpty(key)) return;
+        if (!_checkboxKeys.Contains(key)) _checkboxKeys.Add(key);
+    }
+
+    public static bool IsRegisteredCheckbox(object tag)
+    {
+        string key = Convert.ToString(tag);
+        return !string.IsNullOrEmpty(key) && _checkboxKeys.Contains(key);
     }
 
     public static void Apply(CheckBox checkBox)
     {
-        // Intentionally empty. Custom CheckBox owns its own rendering.
+        // The custom CheckBox owns rendering. Registration above tells it which
+        // visual mode to use without replacing the control instance.
     }
 }
