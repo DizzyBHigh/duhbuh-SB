@@ -20,6 +20,7 @@ public static class DuhBuhUICheckBoxStyler
         if (_initialized) return;
         _initialized = true;
         EventManager.RegisterClassHandler(typeof(CheckBox), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnCheckBoxLoaded));
+        DuhBuhUITextBoxStyler.Initialize();
     }
 
     public static void RegisterCheckboxKey(string key)
