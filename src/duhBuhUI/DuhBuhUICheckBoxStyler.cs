@@ -18,6 +18,7 @@ public static class DuhBuhUICheckBoxStyler
         _initialized = true;
         EventManager.RegisterClassHandler(typeof(StackPanel), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnStackPanelLoaded));
         EventManager.RegisterClassHandler(typeof(Button), UIElement.PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler(OnButtonPreviewMouseDown), true);
+        DuhBuhUIRadioStyler.Initialize();
     }
 
     public static void RegisterCheckboxKey(string key)
