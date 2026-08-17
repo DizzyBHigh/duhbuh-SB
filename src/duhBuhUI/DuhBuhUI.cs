@@ -115,7 +115,14 @@ public sealed class DuhBuhUI
             ControlDefinition d = elements[e] as ControlDefinition;
             if (d != null)
             {
-                if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }); panel.Children.Add(box); }
+                if (d.Type == "toggle")
+                {
+                    StackPanel box = FieldBox(theme, d.Description);
+                    CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key };
+                    DuhBuhUICheckBoxStyler.Apply(toggle);
+                    box.Children.Insert(0, toggle);
+                    panel.Children.Add(box);
+                }
                 else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; Slider slider = new Slider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, IsSnapToTickEnabled = true, Tag = d.Key }; slider.ValueChanged += delegate(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> ev) { label.Text = d.Title + ": " + ((int)Math.Round(ev.NewValue)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
                 else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
                 else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
