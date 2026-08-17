@@ -117,7 +117,9 @@ public sealed class DatePicker : Control
         {
             Title = "Choose Date",
             Width = 340,
-            Height = 385,
+            SizeToContent = SizeToContent.Height,
+            MinHeight = 430,
+            MaxHeight = 520,
             ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
             Owner = owner,
