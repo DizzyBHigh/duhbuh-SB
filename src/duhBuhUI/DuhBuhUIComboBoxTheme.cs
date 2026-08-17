@@ -28,7 +28,6 @@ public static class DuhBuhUIComboBoxTheme
         Color background = light ? Color.FromRgb(255, 255, 255) : Color.FromRgb(38, 41, 48);
         Color foreground = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
         Color border = light ? Color.FromRgb(170, 176, 186) : Color.FromRgb(75, 80, 90);
-        Color hover = light ? Color.FromRgb(235, 240, 248) : Color.FromRgb(52, 56, 65);
         Color accent = Color.FromRgb(224, 166, 52);
 
         Style style = new Style(typeof(ComboBox));
@@ -39,19 +38,17 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.HeightProperty, 34.0));
         style.Setters.Add(new Setter(Control.MinWidthProperty, 90.0));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 5, 34, 5)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(background, foreground, border, accent)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(background, foreground, accent)));
 
         Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
         mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accent)));
         style.Triggers.Add(mouseOver);
-
         return style;
     }
 
-    private static ControlTemplate CreateComboTemplate(Color background, Color foreground, Color border, Color accent)
+    private static ControlTemplate CreateComboTemplate(Color background, Color foreground, Color accent)
     {
         ControlTemplate template = new ControlTemplate(typeof(ComboBox));
-
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
 
         FrameworkElementFactory field = new FrameworkElementFactory(typeof(Border));
@@ -70,9 +67,10 @@ public static class DuhBuhUIComboBoxTheme
 
         ControlTemplate toggleTemplate = new ControlTemplate(typeof(ToggleButton));
         FrameworkElementFactory toggleGrid = new FrameworkElementFactory(typeof(Grid));
+        RelativeSource comboSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1);
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectedItem") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        content.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        content.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectedItem") { RelativeSource = comboSource });
+        content.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = comboSource });
         content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
         content.SetValue(ContentPresenter.MarginProperty, new Thickness(9, 0, 34, 0));
