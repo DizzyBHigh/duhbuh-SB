@@ -21,7 +21,7 @@ public sealed class DuhBuhUICustomDropdown : Control
     private Color _borderColor = Color.FromRgb(75, 80, 90);
     private Color _textColor = Color.FromRgb(240, 242, 245);
     private Color _accentColor = Color.FromRgb(224, 166, 52);
-    private Color _hoverColor = Color.FromRgb(60, 65, 74);
+    private Color _hoverColor = Color.FromRgb(184, 126, 31);
     private Color _selectedTextColor = Colors.White;
 
     public event EventHandler SelectionChanged;
@@ -98,7 +98,7 @@ public sealed class DuhBuhUICustomDropdown : Control
             _borderColor = Color.FromRgb(205, 210, 220);
             _textColor = Color.FromRgb(30, 32, 38);
             _accentColor = Color.FromRgb(176, 120, 22);
-            _hoverColor = Color.FromRgb(232, 235, 240);
+            _hoverColor = Color.FromRgb(214, 158, 37);
             _selectedTextColor = Colors.White;
         }
         else
@@ -108,7 +108,7 @@ public sealed class DuhBuhUICustomDropdown : Control
             _borderColor = Color.FromRgb(75, 80, 90);
             _textColor = Color.FromRgb(240, 242, 245);
             _accentColor = Color.FromRgb(224, 166, 52);
-            _hoverColor = Color.FromRgb(60, 65, 74);
+            _hoverColor = Color.FromRgb(184, 126, 31);
             _selectedTextColor = Colors.White;
         }
         Background = new SolidColorBrush(_panelBackground);
@@ -232,7 +232,7 @@ public sealed class DuhBuhUICustomDropdown : Control
                 if (index != _selectedIndex)
                 {
                     item.Background = new SolidColorBrush(_hoverColor);
-                    text.Foreground = new SolidColorBrush(_textColor);
+                    text.Foreground = new SolidColorBrush(_selectedTextColor);
                 }
             };
             item.MouseLeave += delegate
