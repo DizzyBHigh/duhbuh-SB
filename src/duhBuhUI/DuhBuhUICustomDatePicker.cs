@@ -123,6 +123,7 @@ public sealed class DatePicker : Control
     private void OpenCalendar()
     {
         if (_popup != null && _popup.IsOpen) return;
+        DuhBuhUIPickerPopupManager.Activate(this, ClosePopup);
 
         DateTime displayMonth = new DateTime(
             (_selectedDate ?? DateTime.Today).Year,
@@ -349,6 +350,7 @@ public sealed class DatePicker : Control
             _popup.Closed -= PopupClosed;
             _popup = null;
         }
+        DuhBuhUIPickerPopupManager.Deactivate(this);
         InvalidateVisual();
     }
 
