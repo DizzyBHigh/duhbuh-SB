@@ -126,7 +126,7 @@ public sealed class DatePicker : Control
             Margin = new Thickness(0, 0, 0, 8)
         });
 
-        Calendar calendar = new Calendar
+        System.Windows.Controls.Calendar calendar = new System.Windows.Controls.Calendar
         {
             SelectedDate = _selectedDate ?? DateTime.Today,
             DisplayDate = _selectedDate ?? DateTime.Today,
