@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 // Compatibility bridge: DuhBuhUI historically builds the Date & Time field as
 // two controls. Replace that pair at window-load time with the reusable custom
