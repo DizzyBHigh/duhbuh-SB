@@ -12,8 +12,6 @@ public sealed class DuhBuhUICustomSlider : FrameworkElement
 
     public event EventHandler ValueChanged;
 
-    public string Tag { get; set; }
-
     public double Minimum
     {
         get { return _minimum; }
