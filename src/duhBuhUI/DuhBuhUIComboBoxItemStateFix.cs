@@ -7,8 +7,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 
 // Final visual-state layer for the custom dropdown item template.
-// This deliberately owns the item background/foreground inside the template so
-// WPF theme selection brushes cannot reintroduce the default blue/grey states.
+// The template owns the item visuals so WPF theme selection brushes cannot
+// reintroduce the default blue/grey states.
 public static class DuhBuhUIComboBoxItemStateFix
 {
     private static readonly Color Accent = Color.FromRgb(224, 166, 52);
@@ -27,7 +27,6 @@ public static class DuhBuhUIComboBoxItemStateFix
     {
         Window window = sender as Window;
         if (window == null) return;
-
         window.Dispatcher.BeginInvoke(new Action(() => Apply(window)), DispatcherPriority.Loaded);
     }
 
@@ -42,7 +41,6 @@ public static class DuhBuhUIComboBoxItemStateFix
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(Control.TemplateProperty, CreateTemplate(light)));
-
         window.Resources[typeof(ComboBoxItem)] = style;
     }
 
@@ -60,6 +58,7 @@ public static class DuhBuhUIComboBoxItemStateFix
         border.SetValue(Border.SnapsToDevicePixelsProperty, true);
 
         FrameworkElementFactory presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.Name = "ItemContent";
         presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
         presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
@@ -79,7 +78,7 @@ public static class DuhBuhUIComboBoxItemStateFix
         {
             RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent)
         });
-        presenter.SetValue(ContentPresenter.ForegroundProperty, Brush(normalText));
+        presenter.SetValue(TextElement.ForegroundProperty, Brush(normalText));
         border.AppendChild(presenter);
 
         template.VisualTree = border;
@@ -90,7 +89,7 @@ public static class DuhBuhUIComboBoxItemStateFix
             Value = true
         };
         selected.Setters.Add(new Setter(Border.BackgroundProperty, Brush(Accent), "ItemBorder"));
-        selected.Setters.Add(new Setter(ContentPresenter.ForegroundProperty, Brushes.White, "ItemContent"));
+        selected.Setters.Add(new Setter(TextElement.ForegroundProperty, Brushes.White, "ItemContent"));
 
         Trigger mouseOver = new Trigger
         {
@@ -98,7 +97,7 @@ public static class DuhBuhUIComboBoxItemStateFix
             Value = true
         };
         mouseOver.Setters.Add(new Setter(Border.BackgroundProperty, Brush(Accent), "ItemBorder"));
-        mouseOver.Setters.Add(new Setter(ContentPresenter.ForegroundProperty, Brushes.White, "ItemContent"));
+        mouseOver.Setters.Add(new Setter(TextElement.ForegroundProperty, Brushes.White, "ItemContent"));
 
         Trigger highlighted = new Trigger
         {
@@ -106,7 +105,7 @@ public static class DuhBuhUIComboBoxItemStateFix
             Value = true
         };
         highlighted.Setters.Add(new Setter(Border.BackgroundProperty, Brush(Accent), "ItemBorder"));
-        highlighted.Setters.Add(new Setter(ContentPresenter.ForegroundProperty, Brushes.White, "ItemContent"));
+        highlighted.Setters.Add(new Setter(TextElement.ForegroundProperty, Brushes.White, "ItemContent"));
 
         template.Triggers.Add(selected);
         template.Triggers.Add(mouseOver);
