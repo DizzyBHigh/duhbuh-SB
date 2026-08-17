@@ -46,7 +46,6 @@ public static class DuhBuhUISliderStyler
 
         ControlTemplate template = new ControlTemplate(typeof(Slider));
         FrameworkElementFactory root = new FrameworkElementFactory(typeof(Grid));
-
         FrameworkElementFactory track = new FrameworkElementFactory(typeof(Track));
         track.SetValue(FrameworkElement.NameProperty, "PART_Track");
         track.SetValue(Track.OrientationProperty, Orientation.Horizontal);
@@ -54,35 +53,25 @@ public static class DuhBuhUISliderStyler
         track.SetBinding(Track.MinimumProperty, new Binding("Minimum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
         track.SetBinding(Track.MaximumProperty, new Binding("Maximum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
         track.SetBinding(Track.ValueProperty, new Binding("Value") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent), Mode = BindingMode.TwoWay });
-        track.SetBinding(Track.ViewportSizeProperty, new Binding("ViewportSize") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
 
         FrameworkElementFactory decrease = new FrameworkElementFactory(typeof(RepeatButton));
         decrease.SetValue(ButtonBase.CommandProperty, Slider.DecreaseLarge);
-        decrease.SetValue(Control.BackgroundProperty, Brush(accent));
         decrease.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        decrease.SetValue(Control.HeightProperty, 5.0);
         decrease.SetValue(Control.TemplateProperty, SimpleBarTemplate(accent, new CornerRadius(3, 0, 0, 3)));
-        track.SetValue(Track.DecreaseRepeatButtonProperty, null);
-        track.AppendChild(decrease);
+        track.SetValue(Track.DecreaseRepeatButtonProperty, decrease);
 
         FrameworkElementFactory increase = new FrameworkElementFactory(typeof(RepeatButton));
         increase.SetValue(ButtonBase.CommandProperty, Slider.IncreaseLarge);
-        increase.SetValue(Control.BackgroundProperty, Brush(trackColor));
         increase.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        increase.SetValue(Control.HeightProperty, 5.0);
         increase.SetValue(Control.TemplateProperty, SimpleBarTemplate(trackColor, new CornerRadius(0, 3, 3, 0)));
-        track.AppendChild(increase);
+        track.SetValue(Track.IncreaseRepeatButtonProperty, increase);
 
         FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Thumb));
-        thumb.SetValue(Control.WidthProperty, 14.0);
-        thumb.SetValue(Control.HeightProperty, 22.0);
-        thumb.SetValue(Control.BackgroundProperty, Brush(accent));
-        thumb.SetValue(Control.BorderBrushProperty, Brush(thumbBorder));
-        thumb.SetValue(Control.BorderThicknessProperty, new Thickness(1));
+        thumb.SetValue(Control.WidthProperty, 16.0);
+        thumb.SetValue(Control.HeightProperty, 24.0);
         thumb.SetValue(Control.CursorProperty, System.Windows.Input.Cursors.Hand);
         thumb.SetValue(Control.TemplateProperty, SimpleThumbTemplate(accent, thumbBorder));
-        track.SetValue(Track.ThumbProperty, null);
-        track.AppendChild(thumb);
+        track.SetValue(Track.ThumbProperty, thumb);
 
         root.AppendChild(track);
         template.VisualTree = root;
@@ -106,7 +95,7 @@ public static class DuhBuhUISliderStyler
         border.SetValue(Border.BackgroundProperty, Brush(background));
         border.SetValue(Border.BorderBrushProperty, Brush(borderColor));
         border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
         t.VisualTree = border;
         return t;
     }
