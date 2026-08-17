@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -12,6 +13,7 @@ public sealed class DuhBuhUICustomDropdown : Control
     private string[] _options = new string[0];
     private int _selectedIndex = -1;
     private bool _focused;
+    private Popup _popup;
 
     private Color _popupBackground = Color.FromRgb(28, 30, 34);
     private Color _panelBackground = Color.FromRgb(36, 39, 45);
@@ -119,7 +121,7 @@ public sealed class DuhBuhUICustomDropdown : Control
         base.OnRender(dc);
         Color bg = BrushColor(Background, _panelBackground);
         Color fg = BrushColor(Foreground, _textColor);
-        Color edge = _focused ? _accentColor : BrushColor(BorderBrush, _borderColor);
+        Color edge = (_focused || (_popup != null && _popup.IsOpen)) ? _accentColor : BrushColor(BorderBrush, _borderColor);
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -157,13 +159,19 @@ public sealed class DuhBuhUICustomDropdown : Control
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         Focus();
-        OpenPopup();
+        TogglePopup();
         e.Handled = true;
         base.OnMouseLeftButtonDown(e);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Escape)
+        {
+            ClosePopup();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Enter || e.Key == Key.Space || e.Key == Key.Down)
         {
             OpenPopup();
@@ -179,24 +187,16 @@ public sealed class DuhBuhUICustomDropdown : Control
         base.OnKeyDown(e);
     }
 
+    private void TogglePopup()
+    {
+        if (_popup != null && _popup.IsOpen) ClosePopup();
+        else OpenPopup();
+    }
+
     private void OpenPopup()
     {
         if (_options.Length == 0) return;
-        Window owner = Window.GetWindow(this);
-        Window popup = new Window
-        {
-            Title = "Select",
-            Width = Math.Max(180, ActualWidth + 4),
-            SizeToContent = SizeToContent.Height,
-            MaxHeight = 360,
-            MinHeight = 34,
-            ResizeMode = ResizeMode.NoResize,
-            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-            Owner = owner,
-            ShowInTaskbar = false,
-            Background = new SolidColorBrush(_popupBackground),
-            Foreground = new SolidColorBrush(_textColor)
-        };
+        if (_popup != null && _popup.IsOpen) return;
 
         ScrollViewer scroll = new ScrollViewer
         {
@@ -242,12 +242,12 @@ public sealed class DuhBuhUICustomDropdown : Control
             item.MouseLeftButtonDown += delegate
             {
                 SelectedIndex = index;
-                popup.Close();
+                ClosePopup();
             };
             list.Children.Add(item);
         }
 
-        popup.Content = new Border
+        Border surface = new Border
         {
             Background = new SolidColorBrush(_popupBackground),
             BorderBrush = new SolidColorBrush(_borderColor),
@@ -255,7 +255,38 @@ public sealed class DuhBuhUICustomDropdown : Control
             CornerRadius = new CornerRadius(3),
             Child = scroll
         };
-        popup.ShowDialog();
+
+        _popup = new Popup
+        {
+            PlacementTarget = this,
+            Placement = PlacementMode.Bottom,
+            HorizontalOffset = -1,
+            VerticalOffset = 1,
+            AllowsTransparency = true,
+            StaysOpen = false,
+            Focusable = false,
+            Child = surface,
+            Width = Math.Max(ActualWidth + 2, MinWidth + 2)
+        };
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
+    }
+
+    private void ClosePopup()
+    {
+        if (_popup == null) return;
+        _popup.IsOpen = false;
+    }
+
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        if (_popup != null)
+        {
+            _popup.Closed -= PopupClosed;
+            _popup = null;
+        }
+        InvalidateVisual();
     }
 
     private static Color BrushColor(Brush brush, Color fallback)
