@@ -125,7 +125,7 @@ public sealed class TimePicker : Control
         updatePreview();
 
         Border surface = new Border { Background = Brush(PopupBackground), BorderBrush = Brush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = root };
-        _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = false, Focusable = false, Child = surface, Width = 300 };
+        _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = true, Focusable = false, Child = surface, Width = 300 };
         _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
     }
 
