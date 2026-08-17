@@ -122,7 +122,7 @@ public sealed class DatePicker : Control
                 DateTime captured = date;
                 day.MouseEnter += delegate { if (!(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date)) day.Background = new SolidColorBrush(HoverColor); };
                 day.MouseLeave += delegate { day.Background = new SolidColorBrush(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date ? AccentColor : Colors.Transparent); };
-                day.MouseLeftButtonDown += delegate { SelectedDate = captured; ClosePopup(); };
+                day.MouseLeftButtonDown += delegate { SelectedDate = captured; };
                 Grid.SetColumn(day, index % 7); Grid.SetRow(day, index / 7); days.Children.Add(day);
             }
             calendarPanel.Children.Add(days);
