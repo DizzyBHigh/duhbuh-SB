@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -11,6 +12,8 @@ public sealed class TimePicker : Control
 {
     private TimeSpan? _selectedTime;
     private bool _focused;
+    private Popup _popup;
+    private Window _ownerWindow;
 
     private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
     private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
@@ -65,7 +68,7 @@ public sealed class TimePicker : Control
         base.OnRender(dc);
         Color bg = BrushColor(Background, PanelBackground);
         Color fg = BrushColor(Foreground, TextColor);
-        Color edge = _focused ? AccentColor : BorderColor;
+        Color edge = (_focused || (_popup != null && _popup.IsOpen)) ? AccentColor : BorderColor;
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -105,13 +108,20 @@ public sealed class TimePicker : Control
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         Focus();
-        OpenTimePopup();
+        if (_popup != null && _popup.IsOpen) ClosePopup();
+        else OpenTimePopup();
         e.Handled = true;
         base.OnMouseLeftButtonDown(e);
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        if (e.Key == Key.Escape)
+        {
+            ClosePopup();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Enter || e.Key == Key.Space || e.Key == Key.Down)
         {
             OpenTimePopup();
@@ -123,18 +133,7 @@ public sealed class TimePicker : Control
 
     private void OpenTimePopup()
     {
-        Window owner = Window.GetWindow(this);
-        Window popup = new Window
-        {
-            Title = "Choose Time",
-            Width = 300,
-            Height = 270,
-            ResizeMode = ResizeMode.NoResize,
-            WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-            Owner = owner,
-            Background = new SolidColorBrush(PopupBackground),
-            Foreground = new SolidColorBrush(TextColor)
-        };
+        if (_popup != null && _popup.IsOpen) return;
 
         TimeSpan initial = _selectedTime ?? new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
         int selectedHour = initial.Hours;
@@ -220,11 +219,13 @@ public sealed class TimePicker : Control
             hours.SelectedIndex = n.Hour;
             minutes.SelectedIndex = n.Minute;
         };
-        cancel.Click += delegate { popup.Close(); };
+        cancel.Click += delegate { ClosePopup(); };
         ok.Click += delegate
         {
-            SelectedTime = new TimeSpan(hours.SelectedIndex, minutes.SelectedIndex, 0);
-            popup.Close();
+            int h = hours.SelectedIndex < 0 ? 0 : hours.SelectedIndex;
+            int m = minutes.SelectedIndex < 0 ? 0 : minutes.SelectedIndex;
+            SelectedTime = new TimeSpan(h, m, 0);
+            ClosePopup();
         };
         buttons.Children.Add(now);
         buttons.Children.Add(cancel);
@@ -240,8 +241,74 @@ public sealed class TimePicker : Control
         hours.SelectionChanged += updatePreview;
         minutes.SelectionChanged += updatePreview;
 
-        popup.Content = root;
-        popup.ShowDialog();
+        Border surface = new Border
+        {
+            Background = new SolidColorBrush(PopupBackground),
+            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Child = root
+        };
+
+        _ownerWindow = Window.GetWindow(this);
+        if (_ownerWindow != null)
+            _ownerWindow.PreviewMouseDown += OwnerPreviewMouseDown;
+
+        _popup = new Popup
+        {
+            PlacementTarget = this,
+            Placement = PlacementMode.Bottom,
+            HorizontalOffset = 0,
+            VerticalOffset = 6,
+            AllowsTransparency = true,
+            StaysOpen = true,
+            Focusable = false,
+            Child = surface,
+            Width = 300
+        };
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
+    }
+
+    private void OwnerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_popup == null || !_popup.IsOpen) return;
+        DependencyObject source = e.OriginalSource as DependencyObject;
+        if (source != null && IsDescendantOf(source)) return;
+        ClosePopup();
+    }
+
+    private bool IsDescendantOf(DependencyObject source)
+    {
+        DependencyObject current = source;
+        while (current != null)
+        {
+            if (ReferenceEquals(current, this)) return true;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return false;
+    }
+
+    private void ClosePopup()
+    {
+        if (_popup == null) return;
+        _popup.IsOpen = false;
+    }
+
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        if (_ownerWindow != null)
+        {
+            _ownerWindow.PreviewMouseDown -= OwnerPreviewMouseDown;
+            _ownerWindow = null;
+        }
+        if (_popup != null)
+        {
+            _popup.Closed -= PopupClosed;
+            _popup = null;
+        }
+        InvalidateVisual();
     }
 
     private static TextBlock MakePickerLabel(string text)
