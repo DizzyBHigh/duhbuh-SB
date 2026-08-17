@@ -83,7 +83,6 @@ public static class DuhBuhUICheckBoxStyler
             Height = 0,
             Opacity = 0,
             IsTabStop = false,
-            IsReadOnly = true,
             BorderThickness = new Thickness(0),
             Padding = new Thickness(0)
         };
