@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -9,11 +10,32 @@ using System.Windows.Media;
 // plumbing, while this template owns the field, arrow, popup and item visuals.
 public static class DuhBuhUIComboBoxTheme
 {
+    [ModuleInitializer]
+    internal static void Initialize()
+    {
+        EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
+    }
+
     public static void Apply(Window window, bool light)
     {
         if (window == null) return;
         window.Resources[typeof(ComboBox)] = CreateComboStyle(light);
         window.Resources[typeof(ComboBoxItem)] = CreateItemStyle(light);
+    }
+
+    private static void OnWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        Window window = sender as Window;
+        if (window == null) return;
+        Apply(window, IsLightWindow(window));
+    }
+
+    private static bool IsLightWindow(Window window)
+    {
+        SolidColorBrush brush = window.Background as SolidColorBrush;
+        if (brush == null) return false;
+        Color color = brush.Color;
+        return color.R > 180 && color.G > 180 && color.B > 180;
     }
 
     private static SolidColorBrush Brush(Color color)
@@ -38,7 +60,7 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.HeightProperty, 34.0));
         style.Setters.Add(new Setter(Control.MinWidthProperty, 90.0));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 5, 34, 5)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(background, foreground, accent)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, accent)));
 
         Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
         mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accent)));
@@ -46,7 +68,7 @@ public static class DuhBuhUIComboBoxTheme
         return style;
     }
 
-    private static ControlTemplate CreateComboTemplate(Color background, Color foreground, Color accent)
+    private static ControlTemplate CreateComboTemplate(Color foreground, Color accent)
     {
         ControlTemplate template = new ControlTemplate(typeof(ComboBox));
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
@@ -71,6 +93,7 @@ public static class DuhBuhUIComboBoxTheme
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
         content.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectedItem") { RelativeSource = comboSource });
         content.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = comboSource });
+        content.SetBinding(ContentPresenter.ContentStringFormatProperty, new Binding("SelectionBoxItemStringFormat") { RelativeSource = comboSource });
         content.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         content.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
         content.SetValue(ContentPresenter.MarginProperty, new Thickness(9, 0, 34, 0));
@@ -95,7 +118,7 @@ public static class DuhBuhUIComboBoxTheme
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
 
         FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
-        popupBorder.SetValue(Border.BackgroundProperty, Brush(background));
+        popupBorder.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
         popupBorder.SetValue(Border.BorderBrushProperty, Brush(accent));
         popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
