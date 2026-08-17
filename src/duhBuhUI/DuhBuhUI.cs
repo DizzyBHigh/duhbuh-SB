@@ -94,7 +94,19 @@ public sealed class DuhBuhUI
                 if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }; DuhBuhUICheckBoxStyler.Apply(toggle); box.Children.Insert(0, toggle); panel.Children.Add(box); }
                 else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; DuhBuhUICustomSlider slider = new DuhBuhUICustomSlider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, Tag = d.Key, Margin = new Thickness(3, 5, 3, 5) }; slider.ValueChanged += delegate { label.Text = d.Title + ": " + ((int)Math.Round(slider.Value)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
                 else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
-                else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
+                else if (d.Type == "dropdown")
+                {
+                    StackPanel box = FieldBox(theme, d.Description);
+                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
+                    DuhBuhUICustomDropdown dropdown = new DuhBuhUICustomDropdown { Tag = d.Key, MinWidth = 180, Height = 34, Margin = new Thickness(0, 4, 0, 0) };
+                    dropdown.ApplyTheme(string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase));
+                    dropdown.Options = d.Options ?? new string[0];
+                    string current = Read(d.Key, (string)d.DefaultValue);
+                    dropdown.SelectedItem = current;
+                    if (dropdown.SelectedIndex < 0 && dropdown.Options.Length > 0) dropdown.SelectedIndex = 0;
+                    box.Children.Insert(1, dropdown);
+                    panel.Children.Add(box);
+                }
                 else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Key == "duhbuh_overlay_lurks_position" && d.Options.Length == 9) { Grid group = new Grid { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int r = 0; r < 3; r++) { group.RowDefinitions.Add(new RowDefinition()); group.ColumnDefinitions.Add(new ColumnDefinition()); } for (int j = 0; j < d.Options.Length; j++) { RadioButton radio = new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }; Grid.SetRow(radio, j / 3); Grid.SetColumn(radio, j % 3); group.Children.Add(radio); } box.Children.Insert(1, group); } else { StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); } panel.Children.Add(box); }
                 else if (d.Type == "color") BuildColorControl(panel, d, theme);
                 else if (d.Type == "date") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); panel.Children.Add(box); }
@@ -148,6 +160,7 @@ public sealed class DuhBuhUI
             if (fe != null && Equals(fe.Tag, key))
             {
                 DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider; if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
+                DuhBuhUICustomDropdown customDropdown = fe as DuhBuhUICustomDropdown; if (customDropdown != null) _setGlobal(key, customDropdown.SelectedItem ?? "", true);
                 CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true);
                 Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true);
                 TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true);
