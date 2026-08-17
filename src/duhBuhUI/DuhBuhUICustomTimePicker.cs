@@ -146,17 +146,21 @@ public sealed class TimePicker : Control
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(TextColor),
-            Margin = new Thickness(0, 0, 0, 12)
+            Margin = new Thickness(0, 0, 0, 16)
         });
 
         Grid pickerGrid = new Grid();
+        pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        pickerGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
         TextBlock hourLabel = MakePickerLabel("Hour");
         TextBlock minuteLabel = MakePickerLabel("Minute");
+        Grid.SetRow(hourLabel, 0);
         Grid.SetColumn(hourLabel, 0);
+        Grid.SetRow(minuteLabel, 0);
         Grid.SetColumn(minuteLabel, 2);
         pickerGrid.Children.Add(hourLabel);
         pickerGrid.Children.Add(minuteLabel);
@@ -173,7 +177,9 @@ public sealed class TimePicker : Control
         minutes.Options = minuteOptions;
         hours.SelectedIndex = selectedHour;
         minutes.SelectedIndex = selectedMinute;
+        Grid.SetRow(hours, 1);
         Grid.SetColumn(hours, 0);
+        Grid.SetRow(minutes, 1);
         Grid.SetColumn(minutes, 2);
         pickerGrid.Children.Add(hours);
         pickerGrid.Children.Add(minutes);
@@ -185,9 +191,9 @@ public sealed class TimePicker : Control
             FontWeight = FontWeights.SemiBold,
             Foreground = new SolidColorBrush(TextColor),
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 18, 0, 0)
+            VerticalAlignment = VerticalAlignment.Center
         };
+        Grid.SetRow(colon, 1);
         Grid.SetColumn(colon, 1);
         pickerGrid.Children.Add(colon);
         root.Children.Add(pickerGrid);
@@ -319,7 +325,8 @@ public sealed class TimePicker : Control
             FontSize = 11,
             Foreground = new SolidColorBrush(SecondaryTextColor),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 4)
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 5)
         };
     }
 
