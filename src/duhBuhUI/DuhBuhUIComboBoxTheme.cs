@@ -7,9 +7,15 @@ using System.Windows.Data;
 using System.Windows.Media;
 
 // Shared custom ComboBox appearance for duhBuhUI. WPF supplies the control
-// plumbing, while this template owns the field, arrow, popup and item visuals.
+// plumbing, while this template owns the field, arrow, popup, items and scrollbar visuals.
 public static class DuhBuhUIComboBoxTheme
 {
+    private static readonly Color DarkBackground = Color.FromRgb(38, 41, 48);
+    private static readonly Color DarkPopup = Color.FromRgb(30, 33, 39);
+    private static readonly Color DarkText = Color.FromRgb(240, 242, 245);
+    private static readonly Color DarkBorder = Color.FromRgb(75, 80, 90);
+    private static readonly Color Accent = Color.FromRgb(224, 166, 52);
+
     [ModuleInitializer]
     internal static void Initialize()
     {
@@ -21,6 +27,7 @@ public static class DuhBuhUIComboBoxTheme
         if (window == null) return;
         window.Resources[typeof(ComboBox)] = CreateComboStyle(light);
         window.Resources[typeof(ComboBoxItem)] = CreateItemStyle(light);
+        window.Resources[typeof(ScrollBar)] = CreateScrollBarStyle(light);
     }
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -47,10 +54,9 @@ public static class DuhBuhUIComboBoxTheme
 
     private static Style CreateComboStyle(bool light)
     {
-        Color background = light ? Color.FromRgb(255, 255, 255) : Color.FromRgb(38, 41, 48);
-        Color foreground = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
-        Color border = light ? Color.FromRgb(170, 176, 186) : Color.FromRgb(75, 80, 90);
-        Color accent = Color.FromRgb(224, 166, 52);
+        Color background = light ? Color.FromRgb(255, 255, 255) : DarkBackground;
+        Color foreground = light ? Color.FromRgb(30, 32, 38) : DarkText;
+        Color border = light ? Color.FromRgb(170, 176, 186) : DarkBorder;
 
         Style style = new Style(typeof(ComboBox));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(background)));
@@ -60,16 +66,19 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.HeightProperty, 34.0));
         style.Setters.Add(new Setter(Control.MinWidthProperty, 90.0));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 5, 34, 5)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, accent)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, accent: Accent, light: light)));
 
         Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(accent)));
+        mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(Accent)));
         style.Triggers.Add(mouseOver);
         return style;
     }
 
-    private static ControlTemplate CreateComboTemplate(Color foreground, Color accent)
+    private static ControlTemplate CreateComboTemplate(Color foreground, Color accent, bool light)
     {
+        Color background = light ? Color.FromRgb(255, 255, 255) : DarkBackground;
+        Color popupBackground = light ? Color.FromRgb(255, 255, 255) : DarkPopup;
+
         ControlTemplate template = new ControlTemplate(typeof(ComboBox));
         FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
 
@@ -118,7 +127,7 @@ public static class DuhBuhUIComboBoxTheme
         popup.SetValue(Popup.AllowsTransparencyProperty, true);
 
         FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
-        popupBorder.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        popupBorder.SetValue(Border.BackgroundProperty, Brush(popupBackground));
         popupBorder.SetValue(Border.BorderBrushProperty, Brush(accent));
         popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
@@ -128,6 +137,9 @@ public static class DuhBuhUIComboBoxTheme
         FrameworkElementFactory scroll = new FrameworkElementFactory(typeof(ScrollViewer));
         scroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         scroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
+        scroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
+        scroll.SetBinding(ScrollViewer.MaxHeightProperty, new Binding("MaxDropDownHeight") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
         FrameworkElementFactory items = new FrameworkElementFactory(typeof(ItemsPresenter));
         scroll.AppendChild(items);
         popupBorder.AppendChild(scroll);
@@ -140,26 +152,105 @@ public static class DuhBuhUIComboBoxTheme
 
     private static Style CreateItemStyle(bool light)
     {
-        Color normal = light ? Color.FromRgb(255, 255, 255) : Color.FromRgb(38, 41, 48);
-        Color text = light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
-        Color hover = Color.FromRgb(224, 166, 52);
+        Color normal = light ? Color.FromRgb(255, 255, 255) : DarkPopup;
+        Color text = light ? Color.FromRgb(30, 32, 38) : DarkText;
 
         Style style = new Style(typeof(ComboBoxItem));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(normal)));
         style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(text)));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 5, 8, 5)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 6, 9, 6)));
         style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateItemTemplate()));
 
         Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
+        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
         mouseOver.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
         style.Triggers.Add(mouseOver);
 
         Trigger selected = new Trigger { Property = Selector.IsSelectedProperty, Value = true };
-        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(hover)));
+        selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Color.FromRgb(58, 66, 76))));
         selected.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
         style.Triggers.Add(selected);
+
+        Trigger selectedHover = new Trigger { Property = Selector.IsSelectedProperty, Value = true };
+        selectedHover.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
+        selectedHover.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
+        style.Triggers.Add(selectedHover);
         return style;
+    }
+
+    private static ControlTemplate CreateItemTemplate()
+    {
+        ControlTemplate template = new ControlTemplate(typeof(ComboBoxItem));
+        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        border.SetBinding(Border.BorderBrushProperty, TemplatedBinding("BorderBrush"));
+        border.SetBinding(Border.BorderThicknessProperty, TemplatedBinding("BorderThickness"));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
+        border.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+        FrameworkElementFactory presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
+        presenter.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
+        presenter.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
+        presenter.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
+        presenter.SetBinding(ContentPresenter.MarginProperty, TemplatedBinding("Padding"));
+        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+        border.AppendChild(presenter);
+
+        template.VisualTree = border;
+        return template;
+    }
+
+    private static Style CreateScrollBarStyle(bool light)
+    {
+        Color track = light ? Color.FromRgb(235, 237, 241) : Color.FromRgb(27, 29, 34);
+        Color thumb = light ? Color.FromRgb(170, 176, 186) : Color.FromRgb(82, 88, 98);
+
+        Style style = new Style(typeof(ScrollBar));
+        style.Setters.Add(new Setter(Control.WidthProperty, 10.0));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(track)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateScrollBarTemplate(track, thumb)));
+        return style;
+    }
+
+    private static ControlTemplate CreateScrollBarTemplate(Color trackColor, Color thumbColor)
+    {
+        ControlTemplate template = new ControlTemplate(typeof(ScrollBar));
+        FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
+        grid.SetValue(Grid.BackgroundProperty, Brush(trackColor));
+
+        FrameworkElementFactory track = new FrameworkElementFactory(typeof(Track));
+        track.SetValue(Track.OrientationProperty, Orientation.Vertical);
+        track.SetValue(Track.IsDirectionReversedProperty, true);
+        track.SetBinding(Track.MaximumProperty, new Binding("Maximum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        track.SetBinding(Track.MinimumProperty, new Binding("Minimum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        track.SetBinding(Track.ValueProperty, new Binding("Value") { Mode = BindingMode.TwoWay, RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        track.SetBinding(Track.ViewportSizeProperty, new Binding("ViewportSize") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Thumb));
+        thumb.SetValue(Control.BackgroundProperty, Brush(thumbColor));
+        thumb.SetValue(Control.BorderThicknessProperty, new Thickness(0));
+        thumb.SetValue(Control.MarginProperty, new Thickness(2, 2, 2, 2));
+        thumb.SetValue(Control.CursorProperty, System.Windows.Input.Cursors.Hand);
+        thumb.SetValue(Control.TemplateProperty, CreateThumbTemplate());
+        track.SetValue(Track.ThumbProperty, thumb);
+        grid.AppendChild(track);
+
+        template.VisualTree = grid;
+        return template;
+    }
+
+    private static ControlTemplate CreateThumbTemplate()
+    {
+        ControlTemplate template = new ControlTemplate(typeof(Thumb));
+        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+        template.VisualTree = border;
+        return template;
     }
 
     private static Binding TemplatedBinding(string path)
