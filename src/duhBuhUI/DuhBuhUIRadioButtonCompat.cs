@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -15,6 +16,7 @@ public sealed class RadioButton : Border
     private object _content;
     private string _groupName = "";
     private bool _lightTheme;
+    private bool _themeExplicit;
     private bool _hover;
     private bool _pressed;
     private bool _focused;
@@ -22,7 +24,12 @@ public sealed class RadioButton : Border
     public object Content
     {
         get { return _content; }
-        set { _content = value; RebuildVisual(); }
+        set
+        {
+            _content = value;
+            AutomationProperties.SetName(this, value == null ? "" : value.ToString());
+            RebuildVisual();
+        }
     }
 
     public bool? IsChecked
@@ -47,7 +54,12 @@ public sealed class RadioButton : Border
     public bool IsLightTheme
     {
         get { return _lightTheme; }
-        set { _lightTheme = value; RebuildVisual(); }
+        set
+        {
+            _themeExplicit = true;
+            _lightTheme = value;
+            RebuildVisual();
+        }
     }
 
     // Sizing hooks keep the visual compact while preserving an accessible hit target.
@@ -65,6 +77,7 @@ public sealed class RadioButton : Border
         HorizontalAlignment = HorizontalAlignment.Left;
         Focusable = true;
         Cursor = Cursors.Hand;
+        KeyboardNavigation.SetIsTabStop(this, true);
 
         MouseEnter += delegate { _hover = true; RebuildVisual(); };
         MouseLeave += delegate { _hover = false; _pressed = false; RebuildVisual(); };
@@ -83,8 +96,28 @@ public sealed class RadioButton : Border
         };
         GotKeyboardFocus += delegate { _focused = true; RebuildVisual(); };
         LostKeyboardFocus += delegate { _focused = false; RebuildVisual(); };
+        Loaded += delegate { SyncThemeFromWindow(); };
         KeyDown += HandleKeyDown;
 
+        RebuildVisual();
+    }
+
+    private void SyncThemeFromWindow()
+    {
+        if (_themeExplicit) return;
+        Window window = Window.GetWindow(this);
+        Brush background = window == null ? null : window.Background;
+        SolidColorBrush solid = background as SolidColorBrush;
+        if (solid == null)
+        {
+            _lightTheme = SystemColors.WindowColor.R > 150 && SystemColors.WindowColor.G > 150 && SystemColors.WindowColor.B > 150;
+        }
+        else
+        {
+            Color c = solid.Color;
+            double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+            _lightTheme = luminance >= 0.62;
+        }
         RebuildVisual();
     }
 
