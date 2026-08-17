@@ -120,6 +120,8 @@ public sealed class DateTimePicker : Control
     private void OpenPopup()
     {
         if (_popup != null && _popup.IsOpen) return;
+        DuhBuhUIPickerPopupManager.Activate(this, ClosePopup);
+
         DateTime initial = _selected ?? DateTime.Now;
         DateTime displayMonth = new DateTime(initial.Year, initial.Month, 1);
         int selectedHour = initial.Hour;
@@ -220,7 +222,7 @@ public sealed class DateTimePicker : Control
                 bool isToday = date.Date == DateTime.Today;
                 Border day = new Border { Margin = new Thickness(1), Background = Brush(selected ? Accent : Colors.Transparent), BorderBrush = Brush(isToday ? Accent : Colors.Transparent), BorderThickness = new Thickness(isToday ? 1 : 0), CornerRadius = new CornerRadius(2), Cursor = Cursors.Hand, Tag = date };
                 day.Child = new TextBlock { Text = dayNumber.ToString(CultureInfo.InvariantCulture), FontSize = 12, FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal, Foreground = Brush(selected ? Color.FromRgb(25, 27, 31) : TextColor()), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
-                day.MouseEnter += delegate { if (!(bool)(selected)) day.Background = Brush(DarkHover); };
+                day.MouseEnter += delegate { if (!selected) day.Background = Brush(DarkHover); };
                 day.MouseLeave += delegate { day.Background = Brush(date.Date == currentSelected.Date ? Accent : Colors.Transparent); };
                 day.MouseLeftButtonDown += delegate { initial = date; displayMonth = new DateTime(date.Year, date.Month, 1); rebuildCalendar(); };
                 Grid.SetColumn(day, index % 7); Grid.SetRow(day, index / 7); days.Children.Add(day);
@@ -262,6 +264,7 @@ public sealed class DateTimePicker : Control
     {
         if (_ownerWindow != null) { _ownerWindow.PreviewMouseDown -= OwnerPreviewMouseDown; _ownerWindow = null; }
         if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; }
+        DuhBuhUIPickerPopupManager.Deactivate(this);
         InvalidateVisual();
     }
 
