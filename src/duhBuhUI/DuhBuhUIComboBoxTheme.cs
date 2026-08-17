@@ -4,11 +4,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Markup;
 using System.Windows.Media;
 
 // Shared custom ComboBox appearance for duhBuhUI. WPF supplies the control
-// plumbing, while this template owns the field, arrow, popup, items and scrollbar visuals.
+// plumbing, while this template owns the field, arrow, popup and item visuals.
 public static class DuhBuhUIComboBoxTheme
 {
     private static readonly Color DarkBackground = Color.FromRgb(38, 41, 48);
@@ -26,6 +25,7 @@ public static class DuhBuhUIComboBoxTheme
     public static void Apply(Window window, bool light)
     {
         if (window == null) return;
+
         window.Resources[typeof(ComboBox)] = CreateComboStyle(light);
         window.Resources[typeof(ComboBoxItem)] = CreateItemStyle(light);
         window.Resources[typeof(ScrollBar)] = CreateScrollBarStyle(light);
@@ -42,6 +42,7 @@ public static class DuhBuhUIComboBoxTheme
     {
         SolidColorBrush brush = window.Background as SolidColorBrush;
         if (brush == null) return false;
+
         Color color = brush.Color;
         return color.R > 180 && color.G > 180 && color.B > 180;
     }
@@ -69,9 +70,14 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 5, 34, 5)));
         style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, Accent, light)));
 
-        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        Trigger mouseOver = new Trigger
+        {
+            Property = UIElement.IsMouseOverProperty,
+            Value = true
+        };
         mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(Accent)));
         style.Triggers.Add(mouseOver);
+
         return style;
     }
 
@@ -99,6 +105,7 @@ public static class DuhBuhUIComboBoxTheme
         ControlTemplate toggleTemplate = new ControlTemplate(typeof(ToggleButton));
         FrameworkElementFactory toggleGrid = new FrameworkElementFactory(typeof(Grid));
         RelativeSource comboSource = new RelativeSource(RelativeSourceMode.FindAncestor, typeof(ComboBox), 1);
+
         FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
         content.SetBinding(ContentPresenter.ContentProperty, new Binding("SelectedItem") { RelativeSource = comboSource });
         content.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding("SelectionBoxItemTemplate") { RelativeSource = comboSource });
@@ -116,6 +123,7 @@ public static class DuhBuhUIComboBoxTheme
         arrow.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
         arrow.SetValue(TextBlock.MarginProperty, new Thickness(0, 0, 9, 0));
         toggleGrid.AppendChild(arrow);
+
         toggleTemplate.VisualTree = toggleGrid;
         toggle.SetValue(Control.TemplateProperty, toggleTemplate);
         grid.AppendChild(toggle);
@@ -138,7 +146,10 @@ public static class DuhBuhUIComboBoxTheme
         scroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         scroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
         scroll.SetValue(ScrollViewer.CanContentScrollProperty, true);
-        scroll.SetBinding(ScrollViewer.MaxHeightProperty, new Binding("MaxDropDownHeight") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        scroll.SetBinding(ScrollViewer.MaxHeightProperty, new Binding("MaxDropDownHeight")
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+        });
 
         FrameworkElementFactory items = new FrameworkElementFactory(typeof(ItemsPresenter));
         scroll.AppendChild(items);
@@ -163,20 +174,24 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(Control.TemplateProperty, CreateItemTemplate()));
 
-        Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
-        mouseOver.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
-        style.Triggers.Add(mouseOver);
-
-        Trigger selected = new Trigger { Property = Selector.IsSelectedProperty, Value = true };
+        Trigger selected = new Trigger
+        {
+            Property = Selector.IsSelectedProperty,
+            Value = true
+        };
         selected.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Color.FromRgb(58, 66, 76))));
         selected.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
         style.Triggers.Add(selected);
 
-        Trigger selectedHover = new Trigger { Property = Selector.IsSelectedProperty, Value = true };
-        selectedHover.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
-        selectedHover.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
-        style.Triggers.Add(selectedHover);
+        Trigger mouseOver = new Trigger
+        {
+            Property = UIElement.IsMouseOverProperty,
+            Value = true
+        };
+        mouseOver.Setters.Add(new Setter(Control.BackgroundProperty, Brush(Accent)));
+        mouseOver.Setters.Add(new Setter(Control.ForegroundProperty, Brush(Colors.White)));
+        style.Triggers.Add(mouseOver);
+
         return style;
     }
 
@@ -212,48 +227,15 @@ public static class DuhBuhUIComboBoxTheme
         Style style = new Style(typeof(ScrollBar));
         style.Setters.Add(new Setter(Control.WidthProperty, 10.0));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brush(track)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, CreateScrollBarTemplate(track, thumb)));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, Brush(thumb)));
         return style;
-    }
-
-    private static ControlTemplate CreateScrollBarTemplate(Color trackColor, Color thumbColor)
-    {
-        string xaml = @"
-<ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
-                 xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
-                 TargetType=""{x:Type ScrollBar}"">
-    <Grid Background=""__TRACK__"">
-        <Track x:Name=""PART_Track"
-               Orientation=""Vertical"
-               IsDirectionReversed=""True"
-               Maximum=""{TemplateBinding Maximum}"
-               Minimum=""{TemplateBinding Minimum}"
-               Value=""{TemplateBinding Value}"
-               ViewportSize=""{TemplateBinding ViewportSize}"
-               Background=""__TRACK__""><Track.Thumb>
-            <Thumb Background=""__THUMB__"" Margin=""2"">
-                <Thumb.Template>
-                    <ControlTemplate TargetType=""{x:Type Thumb}"">
-                        <Border Background=""{TemplateBinding Background}"" CornerRadius=""4""/>
-                    </ControlTemplate>
-                </Thumb.Template>
-            </Thumb>
-        </Track.Thumb></Track>
-    </Grid>
-</ControlTemplate>";
-
-        xaml = xaml.Replace("__TRACK__", ToHex(trackColor));
-        xaml = xaml.Replace("__THUMB__", ToHex(thumbColor));
-        return (ControlTemplate)XamlReader.Parse(xaml);
-    }
-
-    private static string ToHex(Color color)
-    {
-        return string.Format("#{0:X2}{1:X2}{2:X2}{3:X2}", color.A, color.R, color.G, color.B);
     }
 
     private static Binding TemplatedBinding(string path)
     {
-        return new Binding(path) { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) };
+        return new Binding(path)
+        {
+            RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent)
+        };
     }
 }
