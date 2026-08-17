@@ -95,9 +95,12 @@ public sealed class DatePicker : Control
         Border calendarBorder = new Border { Background = new SolidColorBrush(PanelBackground), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10) };
         StackPanel calendarPanel = new StackPanel(); calendarBorder.Child = calendarPanel; root.Children.Add(calendarBorder);
         StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
-        Button today = MakePopupButton("Today", 104); Button cancel = MakePopupButton("Cancel", 104); today.Margin = new Thickness(0, 0, 8, 0);
-        today.Click += delegate { SelectedDate = DateTime.Today; ClosePopup(); }; cancel.Click += delegate { ClosePopup(); };
-        buttons.Children.Add(today); buttons.Children.Add(cancel); root.Children.Add(buttons);
+        Button today = MakePopupButton("Today", 104); Button cancel = MakePopupButton("Cancel", 104); Button ok = MakePopupButton("OK", 104);
+        today.Margin = new Thickness(0, 0, 8, 0); cancel.Margin = new Thickness(0, 0, 8, 0);
+        today.Click += delegate { SelectedDate = DateTime.Today; ClosePopup(); };
+        cancel.Click += delegate { ClosePopup(); };
+        ok.Click += delegate { ClosePopup(); };
+        buttons.Children.Add(today); buttons.Children.Add(cancel); buttons.Children.Add(ok); root.Children.Add(buttons);
         Action rebuild = null;
         rebuild = delegate
         {
@@ -122,7 +125,7 @@ public sealed class DatePicker : Control
                 DateTime captured = date;
                 day.MouseEnter += delegate { if (!(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date)) day.Background = new SolidColorBrush(HoverColor); };
                 day.MouseLeave += delegate { day.Background = new SolidColorBrush(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date ? AccentColor : Colors.Transparent); };
-                day.MouseLeftButtonDown += delegate { SelectedDate = captured; };
+                day.MouseLeftButtonDown += delegate { SelectedDate = captured; rebuild(); };
                 Grid.SetColumn(day, index % 7); Grid.SetRow(day, index / 7); days.Children.Add(day);
             }
             calendarPanel.Children.Add(days);
