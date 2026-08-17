@@ -14,6 +14,7 @@ public sealed class DuhBuhUICustomDropdown : Control
     private int _selectedIndex = -1;
     private bool _focused;
     private Popup _popup;
+    private Window _ownerWindow;
 
     private Color _popupBackground = Color.FromRgb(28, 30, 34);
     private Color _panelBackground = Color.FromRgb(36, 39, 45);
@@ -256,6 +257,10 @@ public sealed class DuhBuhUICustomDropdown : Control
             Child = scroll
         };
 
+        _ownerWindow = Window.GetWindow(this);
+        if (_ownerWindow != null)
+            _ownerWindow.PreviewMouseDown += OwnerPreviewMouseDown;
+
         _popup = new Popup
         {
             PlacementTarget = this,
@@ -263,7 +268,10 @@ public sealed class DuhBuhUICustomDropdown : Control
             HorizontalOffset = -1,
             VerticalOffset = 1,
             AllowsTransparency = true,
-            StaysOpen = false,
+            // Do not let Popup's automatic mouse-capture behaviour close the
+            // list on the mouse-up that opened it. We close it explicitly when
+            // an item is selected, Escape is pressed, or the owner is clicked.
+            StaysOpen = true,
             Focusable = false,
             Child = surface,
             Width = Math.Max(ActualWidth + 2, MinWidth + 2)
@@ -271,6 +279,25 @@ public sealed class DuhBuhUICustomDropdown : Control
         _popup.Closed += PopupClosed;
         _popup.IsOpen = true;
         InvalidateVisual();
+    }
+
+    private void OwnerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (_popup == null || !_popup.IsOpen) return;
+        DependencyObject source = e.OriginalSource as DependencyObject;
+        if (source != null && IsDescendantOf(source)) return;
+        ClosePopup();
+    }
+
+    private bool IsDescendantOf(DependencyObject source)
+    {
+        DependencyObject current = source;
+        while (current != null)
+        {
+            if (ReferenceEquals(current, this)) return true;
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return false;
     }
 
     private void ClosePopup()
@@ -281,6 +308,11 @@ public sealed class DuhBuhUICustomDropdown : Control
 
     private void PopupClosed(object sender, EventArgs e)
     {
+        if (_ownerWindow != null)
+        {
+            _ownerWindow.PreviewMouseDown -= OwnerPreviewMouseDown;
+            _ownerWindow = null;
+        }
         if (_popup != null)
         {
             _popup.Closed -= PopupClosed;
