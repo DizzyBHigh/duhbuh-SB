@@ -216,7 +216,6 @@ public sealed class DateTimePicker : Control
             int offset = ((int)displayMonth.DayOfWeek + 6) % 7;
             int count = DateTime.DaysInMonth(displayMonth.Year, displayMonth.Month);
             DateTime currentSelected = initial.Date;
-            if (_selected.HasValue && displayMonth.Year == _selected.Value.Year && displayMonth.Month == _selected.Value.Month) currentSelected = _selected.Value.Date;
             for (int index = 0; index < 42; index++)
             {
                 int dayNumber = index - offset + 1;
