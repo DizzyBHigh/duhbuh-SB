@@ -19,9 +19,8 @@ public static class DuhBuhUICheckBoxStyler
         EventManager.RegisterClassHandler(typeof(CheckBox), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnCheckBoxLoaded));
     }
 
-    private static void OnCheckBoxLoaded(object sender, RoutedEventArgs e)
+    public static void Apply(CheckBox checkBox)
     {
-        CheckBox checkBox = sender as CheckBox;
         if (checkBox == null) return;
         Window window = Window.GetWindow(checkBox);
         bool light = IsLightWindow(window);
@@ -40,6 +39,11 @@ public static class DuhBuhUICheckBoxStyler
             checkBox.Template = CreateToggleTemplate(accent, border, off, text);
         else
             checkBox.Template = CreateCheckBoxTemplate(accent, border, off, text);
+    }
+
+    private static void OnCheckBoxLoaded(object sender, RoutedEventArgs e)
+    {
+        Apply(sender as CheckBox);
     }
 
     private static SolidColorBrush Brush(Color color)
