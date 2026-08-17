@@ -33,7 +33,6 @@ public sealed class TimePicker : Control
         }
     }
 
-    // Compatibility helpers for integrations that prefer text values.
     public string Value
     {
         get { return _selectedTime.HasValue ? _selectedTime.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture) : ""; }
@@ -163,10 +162,16 @@ public sealed class TimePicker : Control
         pickerGrid.Children.Add(hourLabel);
         pickerGrid.Children.Add(minuteLabel);
 
-        ComboBox hours = MakePickerCombo();
-        ComboBox minutes = MakePickerCombo();
-        for (int i = 0; i < 24; i++) hours.Items.Add(i.ToString("00", CultureInfo.InvariantCulture));
-        for (int i = 0; i < 60; i++) minutes.Items.Add(i.ToString("00", CultureInfo.InvariantCulture));
+        // Use the same custom dropdown control as the rest of duhBuhUI.
+        // There is deliberately no WPF ComboBox here.
+        DuhBuhUICustomDropdown hours = MakePickerDropdown();
+        DuhBuhUICustomDropdown minutes = MakePickerDropdown();
+        string[] hourOptions = new string[24];
+        string[] minuteOptions = new string[60];
+        for (int i = 0; i < 24; i++) hourOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
+        for (int i = 0; i < 60; i++) minuteOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
+        hours.Options = hourOptions;
+        minutes.Options = minuteOptions;
         hours.SelectedIndex = selectedHour;
         minutes.SelectedIndex = selectedMinute;
         Grid.SetColumn(hours, 0);
@@ -226,7 +231,7 @@ public sealed class TimePicker : Control
         buttons.Children.Add(ok);
         root.Children.Add(buttons);
 
-        SelectionChangedEventHandler updatePreview = delegate
+        EventHandler updatePreview = delegate
         {
             int h = hours.SelectedIndex < 0 ? 0 : hours.SelectedIndex;
             int m = minutes.SelectedIndex < 0 ? 0 : minutes.SelectedIndex;
@@ -251,28 +256,16 @@ public sealed class TimePicker : Control
         };
     }
 
-    private static ComboBox MakePickerCombo()
+    private static DuhBuhUICustomDropdown MakePickerDropdown()
     {
-        ComboBox combo = new ComboBox
+        DuhBuhUICustomDropdown dropdown = new DuhBuhUICustomDropdown
         {
             MinWidth = 90,
             Height = 32,
-            FontSize = 14,
-            Background = new SolidColorBrush(PanelBackground),
-            Foreground = new SolidColorBrush(TextColor),
-            BorderBrush = new SolidColorBrush(BorderColor),
-            BorderThickness = new Thickness(1)
+            Margin = new Thickness(0, 0, 0, 0)
         };
-        combo.ItemContainerStyle = new Style(typeof(ComboBoxItem))
-        {
-            Setters =
-            {
-                new Setter(Control.ForegroundProperty, new SolidColorBrush(TextColor)),
-                new Setter(Control.BackgroundProperty, new SolidColorBrush(PanelBackground)),
-                new Setter(Control.PaddingProperty, new Thickness(8, 5, 8, 5))
-            }
-        };
-        return combo;
+        dropdown.ApplyTheme(false);
+        return dropdown;
     }
 
     private static Button MakePopupButton(string text)
