@@ -12,6 +12,8 @@ public sealed class DuhBuhUICustomSlider : FrameworkElement
 
     public event EventHandler ValueChanged;
 
+    public string Tag { get; set; }
+
     public double Minimum
     {
         get { return _minimum; }
@@ -65,22 +67,18 @@ public sealed class DuhBuhUICustomSlider : FrameworkElement
         double thumbX = travel * ratio;
         double activeWidth = Math.Max(0, thumbX + thumbWidth / 2.0);
 
-        Color inactiveColor = Color.FromRgb(55, 59, 67);
+        Color trackColor = Color.FromRgb(220, 220, 220);
         Color accentColor = Color.FromRgb(224, 166, 52);
-        Pen borderPen = new Pen(new SolidColorBrush(Color.FromRgb(255, 255, 255)), 1);
+        Pen thumbBorder = new Pen(new SolidColorBrush(Colors.White), 1);
 
-        dc.DrawRoundedRectangle(new SolidColorBrush(inactiveColor), null, new Rect(0, trackY, width, trackHeight), 3, 3);
+        // Fully custom rendering: no native WPF Slider track, thumb, border,
+        // focus rectangle, or template is used.
+        dc.DrawRoundedRectangle(new SolidColorBrush(trackColor), null, new Rect(0, trackY, width, trackHeight), 3, 3);
         if (activeWidth > 0)
             dc.DrawRoundedRectangle(new SolidColorBrush(accentColor), null, new Rect(0, trackY, activeWidth, trackHeight), 3, 3);
 
         Rect thumbRect = new Rect(thumbX, thumbY, thumbWidth, thumbHeight);
-        dc.DrawRoundedRectangle(new SolidColorBrush(accentColor), borderPen, thumbRect, 3, 3);
-
-        if (IsKeyboardFocused)
-        {
-            Pen focusPen = new Pen(new SolidColorBrush(accentColor), 1);
-            dc.DrawRoundedRectangle(null, focusPen, new Rect(0.5, 0.5, Math.Max(0, width - 1), Math.Max(0, height - 1)), 3, 3);
-        }
+        dc.DrawRoundedRectangle(new SolidColorBrush(accentColor), thumbBorder, thumbRect, 3, 3);
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
