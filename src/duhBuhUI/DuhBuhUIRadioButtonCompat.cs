@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -15,6 +16,8 @@ public sealed class RadioButton : Border
     private string _groupName = "";
     private bool _lightTheme;
     private bool _hover;
+    private bool _pressed;
+    private bool _focused;
 
     public object Content
     {
@@ -47,35 +50,63 @@ public sealed class RadioButton : Border
         set { _lightTheme = value; RebuildVisual(); }
     }
 
+    // Sizing hooks keep the visual compact while preserving an accessible hit target.
+    public double IndicatorSize { get; set; } = 14;
+    public double HitTargetHeight { get; set; } = 24;
+    public double HitTargetMinWidth { get; set; } = 44;
+
     public RadioButton()
     {
         Background = Brushes.Transparent;
         BorderBrush = Brushes.Transparent;
         BorderThickness = new Thickness(0);
-        Padding = new Thickness(0);
-        Margin = new Thickness(0, 2, 0, 2);
+        Padding = new Thickness(4, 2, 4, 2);
+        Margin = new Thickness(0, 1, 0, 1);
         HorizontalAlignment = HorizontalAlignment.Left;
         Focusable = true;
         Cursor = Cursors.Hand;
 
         MouseEnter += delegate { _hover = true; RebuildVisual(); };
-        MouseLeave += delegate { _hover = false; RebuildVisual(); };
+        MouseLeave += delegate { _hover = false; _pressed = false; RebuildVisual(); };
+        PreviewMouseLeftButtonDown += delegate(object sender, MouseButtonEventArgs e)
+        {
+            _pressed = true;
+            Focus();
+            RebuildVisual();
+        };
         MouseLeftButtonUp += delegate(object sender, MouseButtonEventArgs e)
         {
+            _pressed = false;
             SetCheckedFromUser();
             Focus();
             e.Handled = true;
         };
-        KeyDown += delegate(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Space || e.Key == Key.Enter)
-            {
-                SetCheckedFromUser();
-                e.Handled = true;
-            }
-        };
+        GotKeyboardFocus += delegate { _focused = true; RebuildVisual(); };
+        LostKeyboardFocus += delegate { _focused = false; RebuildVisual(); };
+        KeyDown += HandleKeyDown;
 
         RebuildVisual();
+    }
+
+    private void HandleKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Space || e.Key == Key.Enter)
+        {
+            SetCheckedFromUser();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Left || e.Key == Key.Up || e.Key == Key.Right || e.Key == Key.Down || e.Key == Key.Home || e.Key == Key.End)
+        {
+            RadioButton target = FindKeyboardTarget(e.Key);
+            if (target != null)
+            {
+                target.Focus();
+                target.SetCheckedFromUser();
+                e.Handled = true;
+            }
+        }
     }
 
     private void SetCheckedFromUser()
@@ -86,27 +117,54 @@ public sealed class RadioButton : Border
         RebuildVisual();
     }
 
-    private void UncheckGroupSiblings()
+    private RadioButton FindKeyboardTarget(Key key)
     {
-        if (string.IsNullOrEmpty(_groupName)) return;
+        Panel panel = FindOwningPanel();
+        if (panel == null || string.IsNullOrEmpty(_groupName)) return null;
+
+        List<RadioButton> radios = new List<RadioButton>();
+        for (int i = 0; i < panel.Children.Count; i++)
+        {
+            RadioButton radio = panel.Children[i] as RadioButton;
+            if (radio != null && string.Equals(radio.GroupName, _groupName, StringComparison.Ordinal)) radios.Add(radio);
+        }
+        if (radios.Count == 0) return null;
+
+        int index = radios.IndexOf(this);
+        if (index < 0) return null;
+        int targetIndex = index;
+        if (key == Key.Left || key == Key.Up) targetIndex = (index - 1 + radios.Count) % radios.Count;
+        else if (key == Key.Right || key == Key.Down) targetIndex = (index + 1) % radios.Count;
+        else if (key == Key.Home) targetIndex = 0;
+        else if (key == Key.End) targetIndex = radios.Count - 1;
+        return radios[targetIndex];
+    }
+
+    private Panel FindOwningPanel()
+    {
         DependencyObject parent = VisualTreeHelper.GetParent(this);
         while (parent != null)
         {
             Panel panel = parent as Panel;
-            if (panel != null)
-            {
-                for (int i = 0; i < panel.Children.Count; i++)
-                {
-                    RadioButton sibling = panel.Children[i] as RadioButton;
-                    if (sibling != null && !ReferenceEquals(sibling, this) && string.Equals(sibling.GroupName, _groupName, StringComparison.Ordinal))
-                    {
-                        sibling._isChecked = false;
-                        sibling.RebuildVisual();
-                    }
-                }
-                return;
-            }
+            if (panel != null) return panel;
             parent = VisualTreeHelper.GetParent(parent);
+        }
+        return null;
+    }
+
+    private void UncheckGroupSiblings()
+    {
+        if (string.IsNullOrEmpty(_groupName)) return;
+        Panel panel = FindOwningPanel();
+        if (panel == null) return;
+        for (int i = 0; i < panel.Children.Count; i++)
+        {
+            RadioButton sibling = panel.Children[i] as RadioButton;
+            if (sibling != null && !ReferenceEquals(sibling, this) && string.Equals(sibling.GroupName, _groupName, StringComparison.Ordinal))
+            {
+                sibling._isChecked = false;
+                sibling.RebuildVisual();
+            }
         }
     }
 
@@ -115,6 +173,11 @@ public sealed class RadioButton : Border
         Color accent = Color.FromRgb(232, 171, 42);
         Color text = _lightTheme ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245);
         Color secondary = _lightTheme ? Color.FromRgb(90, 94, 104) : Color.FromRgb(170, 175, 185);
+        Color focus = _lightTheme ? Color.FromRgb(44, 90, 160) : Color.FromRgb(115, 170, 255);
+
+        BorderBrush = _focused ? new SolidColorBrush(focus) : Brushes.Transparent;
+        BorderThickness = _focused ? new Thickness(1) : new Thickness(0);
+        Background = _pressed ? new SolidColorBrush(_lightTheme ? Color.FromRgb(232, 234, 238) : Color.FromRgb(52, 55, 62)) : Brushes.Transparent;
 
         StackPanel row = new StackPanel
         {
@@ -122,13 +185,14 @@ public sealed class RadioButton : Border
             VerticalAlignment = VerticalAlignment.Center
         };
 
+        double indicator = Math.Max(12, IndicatorSize);
         Border ring = new Border
         {
-            Width = 14,
-            Height = 14,
-            CornerRadius = new CornerRadius(7),
+            Width = indicator,
+            Height = indicator,
+            CornerRadius = new CornerRadius(indicator / 2),
             BorderThickness = new Thickness(2),
-            BorderBrush = new SolidColorBrush((_isChecked || _hover) ? accent : secondary),
+            BorderBrush = new SolidColorBrush((_isChecked || _hover || _pressed) ? accent : secondary),
             Background = _isChecked ? new SolidColorBrush(accent) : Brushes.Transparent,
             Margin = new Thickness(0, 0, 7, 0),
             VerticalAlignment = VerticalAlignment.Center
@@ -136,10 +200,11 @@ public sealed class RadioButton : Border
 
         if (_isChecked)
         {
+            double dot = Math.Max(4, indicator * 0.43);
             ring.Child = new Ellipse
             {
-                Width = 6,
-                Height = 6,
+                Width = dot,
+                Height = dot,
                 Fill = new SolidColorBrush(_lightTheme ? Colors.White : Color.FromRgb(35, 37, 42)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
@@ -156,5 +221,7 @@ public sealed class RadioButton : Border
         });
 
         Child = row;
+        MinHeight = Math.Max(24, HitTargetHeight);
+        MinWidth = Math.Max(44, HitTargetMinWidth);
     }
 }
