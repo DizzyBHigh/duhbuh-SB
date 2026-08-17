@@ -130,13 +130,22 @@ public sealed class DatePicker : Control
         rebuild();
         Border surface = new Border { Background = new SolidColorBrush(PopupBackground), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = root };
         _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = true, Focusable = false, Child = surface, Width = 340 };
-        _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
+        DuhBuhUIPopupCoordinator.Open(_popup, this);
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
     }
 
     private static Button MakeNavButton(string text) { return new Button { Content = text, FontSize = 20, Padding = new Thickness(0, 0, 0, 2), BorderThickness = new Thickness(0), Background = new SolidColorBrush(Colors.Transparent), Foreground = new SolidColorBrush(TextColor), Cursor = Cursors.Hand }; }
     private static Button MakePopupButton(string text, double width) { return new Button { Content = text, Width = width, Height = 38, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = new SolidColorBrush(PanelBackground), Foreground = new SolidColorBrush(TextColor), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
     private void ClosePopup() { if (_popup != null) _popup.IsOpen = false; }
-    private void PopupClosed(object sender, EventArgs e) { if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; } InvalidateVisual(); }
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        Popup popup = _popup;
+        DuhBuhUIPopupCoordinator.Closed(popup);
+        if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; }
+        InvalidateVisual();
+    }
     private void RaiseChanged() { EventHandler handler = SelectedDateChanged; if (handler != null) handler(this, EventArgs.Empty); InvalidateMeasure(); InvalidateVisual(); }
     private static Color BrushColor(Brush brush, Color fallback) { SolidColorBrush solid = brush as SolidColorBrush; return solid == null ? fallback : solid.Color; }
 }
