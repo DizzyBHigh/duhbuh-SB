@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,6 +9,7 @@ using System.Windows.Media;
 // Registered keys render as square checkboxes; ordinary toggle keys render as switches.
 public static class DuhBuhUICheckBoxStyler
 {
+    private static readonly List<string> _checkboxKeys = new List<string>();
     private static bool _initialized;
 
     public static void Initialize()
@@ -20,12 +22,14 @@ public static class DuhBuhUICheckBoxStyler
 
     public static void RegisterCheckboxKey(string key)
     {
-        // Retained for compatibility with existing callers.
+        if (string.IsNullOrEmpty(key)) return;
+        if (!_checkboxKeys.Contains(key)) _checkboxKeys.Add(key);
     }
 
     public static bool IsRegisteredCheckbox(object tag)
     {
-        return false;
+        string key = Convert.ToString(tag);
+        return !string.IsNullOrEmpty(key) && _checkboxKeys.Contains(key);
     }
 
     public static void Apply(CheckBox checkBox)
