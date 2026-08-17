@@ -12,6 +12,14 @@ public sealed class DatePicker : Control
     private DateTime? _selectedDate;
     private bool _focused;
 
+    private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
+    private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
+    private static readonly Color BorderColor = Color.FromRgb(75, 80, 90);
+    private static readonly Color TextColor = Color.FromRgb(240, 242, 245);
+    private static readonly Color SecondaryTextColor = Color.FromRgb(170, 176, 186);
+    private static readonly Color AccentColor = Color.FromRgb(224, 166, 52);
+    private static readonly Color HoverColor = Color.FromRgb(58, 62, 72);
+
     public event EventHandler SelectedDateChanged;
 
     public DateTime? SelectedDate
@@ -34,9 +42,9 @@ public sealed class DatePicker : Control
         Height = 34;
         MinHeight = 34;
         MinWidth = 180;
-        Background = new SolidColorBrush(Color.FromRgb(38, 41, 48));
-        Foreground = new SolidColorBrush(Color.FromRgb(240, 242, 245));
-        BorderBrush = new SolidColorBrush(Color.FromRgb(75, 80, 90));
+        Background = new SolidColorBrush(PanelBackground);
+        Foreground = new SolidColorBrush(TextColor);
+        BorderBrush = new SolidColorBrush(BorderColor);
         BorderThickness = new Thickness(1);
         Padding = new Thickness(9, 5, 34, 5);
     }
@@ -44,9 +52,9 @@ public sealed class DatePicker : Control
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        Color bg = BrushColor(Background, Color.FromRgb(38, 41, 48));
-        Color fg = BrushColor(Foreground, Color.FromRgb(240, 242, 245));
-        Color edge = _focused ? Color.FromRgb(224, 166, 52) : Color.FromRgb(75, 80, 90);
+        Color bg = BrushColor(Background, PanelBackground);
+        Color fg = BrushColor(Foreground, TextColor);
+        Color edge = _focused ? AccentColor : BorderColor;
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
@@ -66,7 +74,7 @@ public sealed class DatePicker : Control
             c.LineTo(new Point(cx + 5, cy - 2), true, false);
             c.LineTo(new Point(cx, cy + 4), true, false);
         }
-        dc.DrawGeometry(new SolidColorBrush(Color.FromRgb(240, 242, 245)), null, arrow);
+        dc.DrawGeometry(new SolidColorBrush(TextColor), null, arrow);
     }
 
     protected override void OnGotFocus(RoutedEventArgs e)
@@ -108,57 +116,202 @@ public sealed class DatePicker : Control
         Window popup = new Window
         {
             Title = "Choose Date",
-            Width = 300,
-            Height = 320,
+            Width = 340,
+            Height = 385,
             ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = owner == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
             Owner = owner,
-            Background = new SolidColorBrush(Color.FromRgb(28, 30, 35))
+            Background = new SolidColorBrush(PopupBackground),
+            Foreground = new SolidColorBrush(TextColor)
         };
 
-        StackPanel root = new StackPanel { Margin = new Thickness(12) };
+        DateTime displayMonth = new DateTime(
+            (_selectedDate ?? DateTime.Today).Year,
+            (_selectedDate ?? DateTime.Today).Month,
+            1);
+
+        StackPanel root = new StackPanel { Margin = new Thickness(14) };
         root.Children.Add(new TextBlock
         {
             Text = "Choose date",
             FontSize = 16,
             FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(240, 242, 245)),
-            Margin = new Thickness(0, 0, 0, 8)
+            Foreground = new SolidColorBrush(TextColor),
+            Margin = new Thickness(0, 0, 0, 10)
         });
 
-        System.Windows.Controls.Calendar calendar = new System.Windows.Controls.Calendar
+        Border calendarBorder = new Border
         {
-            SelectedDate = _selectedDate ?? DateTime.Today,
-            DisplayDate = _selectedDate ?? DateTime.Today,
-            Background = new SolidColorBrush(Color.FromRgb(38, 41, 48)),
-            Foreground = new SolidColorBrush(Color.FromRgb(240, 242, 245)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(75, 80, 90))
+            Background = new SolidColorBrush(PanelBackground),
+            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10)
         };
-        root.Children.Add(calendar);
+
+        StackPanel calendarPanel = new StackPanel();
+        calendarBorder.Child = calendarPanel;
+        root.Children.Add(calendarBorder);
 
         StackPanel buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Margin = new Thickness(0, 10, 0, 0)
+            Margin = new Thickness(0, 12, 0, 0)
         };
-        Button today = new Button { Content = "Today", Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(0, 0, 8, 0) };
-        Button cancel = new Button { Content = "Cancel", Padding = new Thickness(10, 5, 10, 5) };
+        Button today = MakePopupButton("Today");
+        Button cancel = MakePopupButton("Cancel");
+        today.Margin = new Thickness(0, 0, 8, 0);
         today.Click += delegate { SelectedDate = DateTime.Today; popup.Close(); };
         cancel.Click += delegate { popup.Close(); };
-        calendar.SelectedDatesChanged += delegate
-        {
-            if (calendar.SelectedDate.HasValue)
-            {
-                SelectedDate = calendar.SelectedDate.Value;
-                popup.Close();
-            }
-        };
         buttons.Children.Add(today);
         buttons.Children.Add(cancel);
         root.Children.Add(buttons);
+
+        Action rebuild = null;
+        rebuild = delegate
+        {
+            calendarPanel.Children.Clear();
+
+            Grid header = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) });
+
+            Button previous = MakeNavButton("‹");
+            Button next = MakeNavButton("›");
+            TextBlock monthText = new TextBlock
+            {
+                Text = displayMonth.ToString("MMMM yyyy", CultureInfo.CurrentCulture),
+                FontSize = 15,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(TextColor),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(previous, 0);
+            Grid.SetColumn(monthText, 1);
+            Grid.SetColumn(next, 2);
+            header.Children.Add(previous);
+            header.Children.Add(monthText);
+            header.Children.Add(next);
+            previous.Click += delegate { displayMonth = displayMonth.AddMonths(-1); rebuild(); };
+            next.Click += delegate { displayMonth = displayMonth.AddMonths(1); rebuild(); };
+            calendarPanel.Children.Add(header);
+
+            Grid dayNames = new Grid { Margin = new Thickness(0, 0, 0, 4) };
+            for (int i = 0; i < 7; i++) dayNames.ColumnDefinitions.Add(new ColumnDefinition());
+            string[] names = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+            for (int i = 0; i < 7; i++)
+            {
+                TextBlock name = new TextBlock
+                {
+                    Text = names[i],
+                    FontSize = 11,
+                    Foreground = new SolidColorBrush(SecondaryTextColor),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                Grid.SetColumn(name, i);
+                dayNames.Children.Add(name);
+            }
+            calendarPanel.Children.Add(dayNames);
+
+            Grid days = new Grid();
+            for (int i = 0; i < 7; i++) days.ColumnDefinitions.Add(new ColumnDefinition());
+            for (int i = 0; i < 6; i++) days.RowDefinitions.Add(new RowDefinition { Height = new GridLength(32) });
+
+            DateTime first = displayMonth;
+            int offset = ((int)first.DayOfWeek + 6) % 7;
+            int daysInMonth = DateTime.DaysInMonth(displayMonth.Year, displayMonth.Month);
+
+            for (int index = 0; index < 42; index++)
+            {
+                int dayNumber = index - offset + 1;
+                if (dayNumber < 1 || dayNumber > daysInMonth) continue;
+
+                DateTime date = new DateTime(displayMonth.Year, displayMonth.Month, dayNumber);
+                Button day = new Button
+                {
+                    Content = dayNumber.ToString(CultureInfo.InvariantCulture),
+                    FontSize = 12,
+                    Margin = new Thickness(1),
+                    Padding = new Thickness(0),
+                    BorderThickness = new Thickness(0),
+                    Background = new SolidColorBrush(Colors.Transparent),
+                    Foreground = new SolidColorBrush(TextColor),
+                    Cursor = Cursors.Hand,
+                    Tag = date
+                };
+
+                if (_selectedDate.HasValue && _selectedDate.Value.Date == date.Date)
+                {
+                    day.Background = new SolidColorBrush(AccentColor);
+                    day.Foreground = new SolidColorBrush(Color.FromRgb(25, 27, 31));
+                    day.FontWeight = FontWeights.SemiBold;
+                }
+                else if (date.Date == DateTime.Today)
+                {
+                    day.BorderBrush = new SolidColorBrush(AccentColor);
+                    day.BorderThickness = new Thickness(1);
+                }
+
+                day.MouseEnter += delegate
+                {
+                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    if (!selected) day.Background = new SolidColorBrush(HoverColor);
+                };
+                day.MouseLeave += delegate
+                {
+                    bool selected = _selectedDate.HasValue && _selectedDate.Value.Date == date.Date;
+                    day.Background = new SolidColorBrush(selected ? AccentColor : Colors.Transparent);
+                };
+                day.Click += delegate
+                {
+                    SelectedDate = (DateTime)day.Tag;
+                    popup.Close();
+                };
+
+                Grid.SetColumn(day, index % 7);
+                Grid.SetRow(day, index / 7);
+                days.Children.Add(day);
+            }
+
+            calendarPanel.Children.Add(days);
+        };
+
+        rebuild();
         popup.Content = root;
         popup.ShowDialog();
+    }
+
+    private static Button MakeNavButton(string text)
+    {
+        return new Button
+        {
+            Content = text,
+            FontSize = 20,
+            Padding = new Thickness(0, 0, 0, 2),
+            BorderThickness = new Thickness(0),
+            Background = new SolidColorBrush(Colors.Transparent),
+            Foreground = new SolidColorBrush(TextColor),
+            Cursor = Cursors.Hand
+        };
+    }
+
+    private static Button MakePopupButton(string text)
+    {
+        return new Button
+        {
+            Content = text,
+            FontSize = 13,
+            Padding = new Thickness(12, 6, 12, 6),
+            Background = new SolidColorBrush(PanelBackground),
+            Foreground = new SolidColorBrush(TextColor),
+            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderThickness = new Thickness(1),
+            Cursor = Cursors.Hand
+        };
     }
 
     private void RaiseChanged()
