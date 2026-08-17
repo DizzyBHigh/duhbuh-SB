@@ -18,8 +18,7 @@ public sealed class TimePicker : Control
     private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
     private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
     private static readonly Color BorderColor = Color.FromRgb(75, 80, 90);
-    private static readonly Color TextColor = Color.FromRgb(240, 242, 245);
-    private static readonly Color SecondaryTextColor = Color.FromRgb(170, 176, 186);
+    private static readonly Color TextColorStatic = Color.FromRgb(240, 242, 245);
     private static readonly Color AccentColor = Color.FromRgb(224, 166, 52);
 
     public event EventHandler SelectedTimeChanged;
@@ -47,7 +46,7 @@ public sealed class TimePicker : Control
         Focusable = true; IsTabStop = true; Cursor = Cursors.Hand;
         Height = 34; MinHeight = 34; MinWidth = 180;
         Background = new SolidColorBrush(PanelBackground);
-        Foreground = new SolidColorBrush(TextColor);
+        Foreground = new SolidColorBrush(TextColorStatic);
         BorderBrush = new SolidColorBrush(BorderColor);
         BorderThickness = new Thickness(1);
         Padding = new Thickness(9, 5, 34, 5);
@@ -57,7 +56,7 @@ public sealed class TimePicker : Control
     {
         _lightTheme = light;
         Background = new SolidColorBrush(light ? Color.FromRgb(255, 255, 255) : PanelBackground);
-        Foreground = new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : TextColor);
+        Foreground = new SolidColorBrush(light ? Color.FromRgb(30, 32, 38) : TextColorStatic);
         BorderBrush = new SolidColorBrush(light ? Color.FromRgb(160, 164, 172) : BorderColor);
         InvalidateVisual();
     }
@@ -66,7 +65,7 @@ public sealed class TimePicker : Control
     {
         base.OnRender(dc);
         Color bg = BrushColor(Background, _lightTheme ? Colors.White : PanelBackground);
-        Color fg = BrushColor(Foreground, _lightTheme ? Color.FromRgb(30, 32, 38) : TextColor);
+        Color fg = BrushColor(Foreground, _lightTheme ? Color.FromRgb(30, 32, 38) : TextColorStatic);
         Color edge = (_focused || (_popup != null && _popup.IsOpen)) ? AccentColor : BrushColor(BorderBrush, BorderColor);
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1), new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
         string text = _selectedTime.HasValue ? _selectedTime.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture) : "Select time";
@@ -90,7 +89,7 @@ public sealed class TimePicker : Control
         int selectedHour = initial.Hours, selectedMinute = initial.Minutes;
 
         StackPanel root = new StackPanel { Margin = new Thickness(14) };
-        root.Children.Add(new TextBlock { Text = "Choose time", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = Brush(TextColor), Margin = new Thickness(0, 0, 0, 12) });
+        root.Children.Add(new TextBlock { Text = "Choose time", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = Brush(TextColor()), Margin = new Thickness(0, 0, 0, 12) });
 
         DuhBuhUICustomDropdown hours = MakeTimeDropdown();
         DuhBuhUICustomDropdown minutes = MakeTimeDropdown();
@@ -107,7 +106,7 @@ public sealed class TimePicker : Control
         StackPanel hourPanel = new StackPanel(); hourPanel.Children.Add(MakePickerLabel("Hour")); hourPanel.Children.Add(hours);
         StackPanel minutePanel = new StackPanel(); minutePanel.Children.Add(MakePickerLabel("Minute")); minutePanel.Children.Add(minutes);
         Grid.SetColumn(hourPanel, 0); Grid.SetColumn(minutePanel, 2); pickerGrid.Children.Add(hourPanel); pickerGrid.Children.Add(minutePanel);
-        TextBlock colon = new TextBlock { Text = ":", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = Brush(TextColor), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 4) };
+        TextBlock colon = new TextBlock { Text = ":", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = Brush(TextColor()), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 4) };
         Grid.SetColumn(colon, 1); pickerGrid.Children.Add(colon); root.Children.Add(pickerGrid);
 
         TextBlock preview = new TextBlock { FontSize = 24, FontWeight = FontWeights.SemiBold, Foreground = Brush(AccentColor), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 20, 0, 14) };
@@ -125,7 +124,7 @@ public sealed class TimePicker : Control
         hours.SelectionChanged += delegate { updatePreview(); }; minutes.SelectionChanged += delegate { updatePreview(); };
         updatePreview();
 
-        Border surface = new Border { Background = Brush(PopupBackground), BorderBrush = Brush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(0), Child = root };
+        Border surface = new Border { Background = Brush(PopupBackground), BorderBrush = Brush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = root };
         _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = false, Focusable = false, Child = surface, Width = 300 };
         _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
     }
@@ -135,15 +134,14 @@ public sealed class TimePicker : Control
         DuhBuhUICustomDropdown d = new DuhBuhUICustomDropdown { MinWidth = 120, Height = 32 };
         d.ApplyTheme(_lightTheme); return d;
     }
-    private TextBlock MakePickerLabel(string text) { return new TextBlock { Text = text, FontSize = 11, Foreground = Brush(SecondaryTextColor), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) }; }
-    private static Button MakePopupButton(string text, double width) { return new Button { Content = text, Width = width, Height = 38, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = new SolidColorBrush(PanelBackground), Foreground = new SolidColorBrush(TextColor), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
+    private TextBlock MakePickerLabel(string text) { return new TextBlock { Text = text, FontSize = 11, Foreground = Brush(SecondaryColor()), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) }; }
+    private static Button MakePopupButton(string text, double width) { return new Button { Content = text, Width = width, Height = 38, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = new SolidColorBrush(PanelBackground), Foreground = new SolidColorBrush(TextColorStatic), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
     private void ClosePopup() { if (_popup != null) _popup.IsOpen = false; }
     private void PopupClosed(object sender, EventArgs e) { if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; } InvalidateVisual(); }
     private void SetTextValue(string value) { TimeSpan parsed; if (TimeSpan.TryParseExact(value ?? "", new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsed)) SelectedTime = new TimeSpan(parsed.Hours, parsed.Minutes, 0); }
     private void RaiseChanged() { EventHandler handler = SelectedTimeChanged; if (handler != null) handler(this, EventArgs.Empty); InvalidateMeasure(); InvalidateVisual(); }
     private Brush Brush(Color c) { return new SolidColorBrush(c); }
     private Color TextColor() { return _lightTheme ? Color.FromRgb(30, 32, 38) : TextColorStatic; }
-    private Color SecondaryTextColor { get { return _lightTheme ? Color.FromRgb(90, 94, 104) : Color.FromRgb(170, 176, 186); } }
-    private static readonly Color TextColorStatic = Color.FromRgb(240, 242, 245);
+    private Color SecondaryColor() { return _lightTheme ? Color.FromRgb(90, 94, 104) : Color.FromRgb(170, 176, 186); }
     private static Color BrushColor(Brush brush, Color fallback) { SolidColorBrush solid = brush as SolidColorBrush; return solid == null ? fallback : solid.Color; }
 }
