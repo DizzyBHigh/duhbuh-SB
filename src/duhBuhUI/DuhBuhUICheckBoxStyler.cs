@@ -3,9 +3,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Media;
 
+// Reusable checkbox/toggle visuals. Native CheckBox supplies input/state;
+// the template is entirely built from basic WPF primitives so the visual
+// appearance does not depend on the stock WPF checkbox theme.
 public static class DuhBuhUICheckBoxStyler
 {
     private static bool _initialized;
@@ -21,33 +23,23 @@ public static class DuhBuhUICheckBoxStyler
     {
         CheckBox checkBox = sender as CheckBox;
         if (checkBox == null) return;
+
         Window window = Window.GetWindow(checkBox);
-        if (window == null) return;
+        bool light = IsLightWindow(window);
+        SolidColorBrush accent = Brush(Color.FromRgb(224, 166, 52));
+        SolidColorBrush border = Brush(light ? Color.FromRgb(145, 150, 160) : Color.FromRgb(75, 80, 90));
+        SolidColorBrush off = Brush(light ? Color.FromRgb(238, 239, 242) : Color.FromRgb(52, 56, 64));
+        SolidColorBrush text = Brush(light ? Color.FromRgb(30, 32, 38) : Color.FromRgb(240, 242, 245));
 
-        SolidColorBrush accent = GetBrush(window, "duhBuhAccent", Color.FromRgb(224, 166, 52));
-        SolidColorBrush border = GetBrush(window, "duhBuhSectionBorder", Color.FromRgb(75, 80, 90));
-        bool isToggle = checkBox.Tag != null;
+        checkBox.Foreground = text;
+        checkBox.Focusable = true;
+        checkBox.Padding = new Thickness(0);
+        checkBox.Margin = new Thickness(0, 5, 0, 2);
 
-        if (isToggle)
-        {
-            checkBox.Template = CreateToggleTemplate(accent, border);
-            checkBox.Padding = new Thickness(0);
-            checkBox.Margin = new Thickness(0, 5, 0, 2);
-        }
+        if (checkBox.Tag != null)
+            checkBox.Template = CreateToggleTemplate(accent, border, off, text);
         else
-        {
-            checkBox.Template = CreateCheckBoxTemplate(accent, border);
-        }
-    }
-
-    private static SolidColorBrush GetBrush(FrameworkElement element, string key, Color fallback)
-    {
-        object value = null;
-        if (element != null && element.Resources != null && element.Resources.Contains(key)) value = element.Resources[key];
-        Window window = element as Window;
-        if (value == null && window != null && window.Resources != null && window.Resources.Contains(key)) value = window.Resources[key];
-        SolidColorBrush brush = value as SolidColorBrush;
-        return brush ?? Brush(fallback);
+            checkBox.Template = CreateCheckBoxTemplate(accent, border, off, text);
     }
 
     private static SolidColorBrush Brush(Color color)
@@ -66,21 +58,22 @@ public static class DuhBuhUICheckBoxStyler
         };
     }
 
-    private static ControlTemplate CreateCheckBoxTemplate(SolidColorBrush accent, SolidColorBrush border)
+    private static ControlTemplate CreateCheckBoxTemplate(SolidColorBrush accent, SolidColorBrush border, SolidColorBrush off, SolidColorBrush text)
     {
         ControlTemplate template = new ControlTemplate(typeof(CheckBox));
+
         FrameworkElementFactory panel = new FrameworkElementFactory(typeof(StackPanel));
         panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
         panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory box = new FrameworkElementFactory(typeof(Border));
         box.SetValue(FrameworkElement.NameProperty, "box");
-        box.SetValue(Border.WidthProperty, 16.0);
-        box.SetValue(Border.HeightProperty, 16.0);
+        box.SetValue(Border.WidthProperty, 17.0);
+        box.SetValue(Border.HeightProperty, 17.0);
         box.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
         box.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         box.SetValue(Border.BorderBrushProperty, border);
-        box.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        box.SetValue(Border.BackgroundProperty, off);
         box.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 0));
         box.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
@@ -96,14 +89,11 @@ public static class DuhBuhUICheckBoxStyler
         box.AppendChild(check);
         panel.AppendChild(box);
 
-        FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
-        content.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
-        content.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
-        content.SetBinding(TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
-        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
-        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
-        panel.AppendChild(content);
+        FrameworkElementFactory label = new FrameworkElementFactory(typeof(TextBlock));
+        label.SetBinding(TextBlock.TextProperty, TemplatedBinding("Content"));
+        label.SetBinding(TextBlock.ForegroundProperty, TemplatedBinding("Foreground"));
+        label.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(label);
 
         template.VisualTree = panel;
 
@@ -120,22 +110,24 @@ public static class DuhBuhUICheckBoxStyler
         Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55));
         template.Triggers.Add(disabledTrigger);
+
         return template;
     }
 
-    private static ControlTemplate CreateToggleTemplate(SolidColorBrush accent, SolidColorBrush border)
+    private static ControlTemplate CreateToggleTemplate(SolidColorBrush accent, SolidColorBrush border, SolidColorBrush off, SolidColorBrush text)
     {
         ControlTemplate template = new ControlTemplate(typeof(CheckBox));
+
         FrameworkElementFactory panel = new FrameworkElementFactory(typeof(StackPanel));
         panel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
         panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 
         FrameworkElementFactory track = new FrameworkElementFactory(typeof(Border));
         track.SetValue(FrameworkElement.NameProperty, "track");
-        track.SetValue(Border.WidthProperty, 42.0);
-        track.SetValue(Border.HeightProperty, 22.0);
-        track.SetValue(Border.CornerRadiusProperty, new CornerRadius(11));
-        track.SetValue(Border.BackgroundProperty, Brush(Color.FromRgb(68, 73, 82)));
+        track.SetValue(Border.WidthProperty, 44.0);
+        track.SetValue(Border.HeightProperty, 24.0);
+        track.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
+        track.SetValue(Border.BackgroundProperty, off);
         track.SetValue(Border.BorderBrushProperty, border);
         track.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         track.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 9, 0));
@@ -143,9 +135,9 @@ public static class DuhBuhUICheckBoxStyler
 
         FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Border));
         thumb.SetValue(FrameworkElement.NameProperty, "thumb");
-        thumb.SetValue(Border.WidthProperty, 16.0);
-        thumb.SetValue(Border.HeightProperty, 16.0);
-        thumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+        thumb.SetValue(Border.WidthProperty, 18.0);
+        thumb.SetValue(Border.HeightProperty, 18.0);
+        thumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
         thumb.SetValue(Border.BackgroundProperty, Brushes.White);
         thumb.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
         thumb.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
@@ -153,19 +145,17 @@ public static class DuhBuhUICheckBoxStyler
         track.AppendChild(thumb);
         panel.AppendChild(track);
 
-        FrameworkElementFactory content = new FrameworkElementFactory(typeof(ContentPresenter));
-        content.SetBinding(ContentPresenter.ContentProperty, TemplatedBinding("Content"));
-        content.SetBinding(ContentPresenter.ContentTemplateProperty, TemplatedBinding("ContentTemplate"));
-        content.SetBinding(ContentPresenter.ContentStringFormatProperty, TemplatedBinding("ContentStringFormat"));
-        content.SetBinding(TextElement.ForegroundProperty, TemplatedBinding("Foreground"));
-        content.SetBinding(ContentPresenter.HorizontalAlignmentProperty, TemplatedBinding("HorizontalContentAlignment"));
-        content.SetBinding(ContentPresenter.VerticalAlignmentProperty, TemplatedBinding("VerticalContentAlignment"));
-        panel.AppendChild(content);
+        FrameworkElementFactory label = new FrameworkElementFactory(typeof(TextBlock));
+        label.SetBinding(TextBlock.TextProperty, TemplatedBinding("Content"));
+        label.SetBinding(TextBlock.ForegroundProperty, TemplatedBinding("Foreground"));
+        label.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+        panel.AppendChild(label);
 
         template.VisualTree = panel;
 
         Trigger checkedTrigger = new Trigger { Property = ToggleButton.IsCheckedProperty, Value = true };
         checkedTrigger.Setters.Add(new Setter(Border.BackgroundProperty, accent, "track"));
+        checkedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, accent, "track"));
         checkedTrigger.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right, "thumb"));
         template.Triggers.Add(checkedTrigger);
 
@@ -176,6 +166,16 @@ public static class DuhBuhUICheckBoxStyler
         Trigger disabledTrigger = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
         disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.55));
         template.Triggers.Add(disabledTrigger);
+
         return template;
+    }
+
+    private static bool IsLightWindow(Window window)
+    {
+        if (window == null) return false;
+        SolidColorBrush brush = window.Background as SolidColorBrush;
+        if (brush == null) return false;
+        Color color = brush.Color;
+        return color.R > 180 && color.G > 180 && color.B > 180;
     }
 }
