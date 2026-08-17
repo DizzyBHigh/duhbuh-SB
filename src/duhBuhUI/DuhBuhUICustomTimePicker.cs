@@ -151,7 +151,7 @@ public sealed class TimePicker : Control
 
         Grid pickerGrid = new Grid();
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
-        pickerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+        pickerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(24) });
         pickerGrid.ColumnDefinitions.Add(new ColumnDefinition());
 
         TextBlock hourLabel = MakePickerLabel("Hour");
@@ -206,7 +206,7 @@ public sealed class TimePicker : Control
         StackPanel buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right
+            HorizontalAlignment = HorizontalAlignment.Center
         };
         Button now = MakePopupButton("Now");
         Button cancel = MakePopupButton("Cancel");
@@ -264,7 +264,7 @@ public sealed class TimePicker : Control
             StaysOpen = true,
             Focusable = false,
             Child = surface,
-            Width = 300
+            Width = 360
         };
         _popup.Closed += PopupClosed;
         _popup.IsOpen = true;
@@ -327,7 +327,7 @@ public sealed class TimePicker : Control
     {
         DuhBuhUICustomDropdown dropdown = new DuhBuhUICustomDropdown
         {
-            MinWidth = 90,
+            MinWidth = 120,
             Height = 32,
             Margin = new Thickness(0, 0, 0, 0)
         };
