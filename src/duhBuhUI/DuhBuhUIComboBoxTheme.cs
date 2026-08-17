@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Media;
 
 // Shared custom ComboBox appearance for duhBuhUI. WPF supplies the control
@@ -66,7 +67,7 @@ public static class DuhBuhUIComboBoxTheme
         style.Setters.Add(new Setter(Control.HeightProperty, 34.0));
         style.Setters.Add(new Setter(Control.MinWidthProperty, 90.0));
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(9, 5, 34, 5)));
-        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, accent: Accent, light: light)));
+        style.Setters.Add(new Setter(Control.TemplateProperty, CreateComboTemplate(foreground, Accent, light)));
 
         Trigger mouseOver = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
         mouseOver.Setters.Add(new Setter(Control.BorderBrushProperty, Brush(Accent)));
@@ -76,7 +77,6 @@ public static class DuhBuhUIComboBoxTheme
 
     private static ControlTemplate CreateComboTemplate(Color foreground, Color accent, bool light)
     {
-        Color background = light ? Color.FromRgb(255, 255, 255) : DarkBackground;
         Color popupBackground = light ? Color.FromRgb(255, 255, 255) : DarkPopup;
 
         ControlTemplate template = new ControlTemplate(typeof(ComboBox));
@@ -218,39 +218,38 @@ public static class DuhBuhUIComboBoxTheme
 
     private static ControlTemplate CreateScrollBarTemplate(Color trackColor, Color thumbColor)
     {
-        ControlTemplate template = new ControlTemplate(typeof(ScrollBar));
-        FrameworkElementFactory grid = new FrameworkElementFactory(typeof(Grid));
-        grid.SetValue(Grid.BackgroundProperty, Brush(trackColor));
+        string xaml = @"
+<ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+                 xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+                 TargetType=""{x:Type ScrollBar}"">
+    <Grid Background=""__TRACK__"">
+        <Track x:Name=""PART_Track"
+               Orientation=""Vertical"
+               IsDirectionReversed=""True"
+               Maximum=""{TemplateBinding Maximum}"
+               Minimum=""{TemplateBinding Minimum}"
+               Value=""{TemplateBinding Value}"
+               ViewportSize=""{TemplateBinding ViewportSize}"
+               Background=""__TRACK__""><Track.Thumb>
+            <Thumb Background=""__THUMB__"" Margin=""2"">
+                <Thumb.Template>
+                    <ControlTemplate TargetType=""{x:Type Thumb}"">
+                        <Border Background=""{TemplateBinding Background}"" CornerRadius=""4""/>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+        </Track.Thumb></Track>
+    </Grid>
+</ControlTemplate>";
 
-        FrameworkElementFactory track = new FrameworkElementFactory(typeof(Track));
-        track.SetValue(Track.OrientationProperty, Orientation.Vertical);
-        track.SetValue(Track.IsDirectionReversedProperty, true);
-        track.SetBinding(Track.MaximumProperty, new Binding("Maximum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        track.SetBinding(Track.MinimumProperty, new Binding("Minimum") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        track.SetBinding(Track.ValueProperty, new Binding("Value") { Mode = BindingMode.TwoWay, RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-        track.SetBinding(Track.ViewportSizeProperty, new Binding("ViewportSize") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
-
-        FrameworkElementFactory thumb = new FrameworkElementFactory(typeof(Thumb));
-        thumb.SetValue(Control.BackgroundProperty, Brush(thumbColor));
-        thumb.SetValue(Control.BorderThicknessProperty, new Thickness(0));
-        thumb.SetValue(Control.MarginProperty, new Thickness(2, 2, 2, 2));
-        thumb.SetValue(Control.CursorProperty, System.Windows.Input.Cursors.Hand);
-        thumb.SetValue(Control.TemplateProperty, CreateThumbTemplate());
-        track.SetValue(Track.ThumbProperty, thumb);
-        grid.AppendChild(track);
-
-        template.VisualTree = grid;
-        return template;
+        xaml = xaml.Replace("__TRACK__", ToHex(trackColor));
+        xaml = xaml.Replace("__THUMB__", ToHex(thumbColor));
+        return (ControlTemplate)XamlReader.Parse(xaml);
     }
 
-    private static ControlTemplate CreateThumbTemplate()
+    private static string ToHex(Color color)
     {
-        ControlTemplate template = new ControlTemplate(typeof(Thumb));
-        FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
-        border.SetBinding(Border.BackgroundProperty, TemplatedBinding("Background"));
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
-        template.VisualTree = border;
-        return template;
+        return string.Format("#{0:X2}{1:X2}{2:X2}{3:X2}", color.A, color.R, color.G, color.B);
     }
 
     private static Binding TemplatedBinding(string path)
