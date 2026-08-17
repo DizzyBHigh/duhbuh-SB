@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,12 +13,24 @@ using System.Windows.Media;
 public static class DuhBuhUICheckBoxStyler
 {
     private static bool _initialized;
+    private static readonly List<string> _checkboxKeys = new List<string>();
 
     public static void Initialize()
     {
         if (_initialized) return;
         _initialized = true;
         EventManager.RegisterClassHandler(typeof(CheckBox), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnCheckBoxLoaded));
+    }
+
+    public static void RegisterCheckboxKey(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return;
+        if (!_checkboxKeys.Contains(key)) _checkboxKeys.Add(key);
+    }
+
+    private static bool IsRegisteredCheckbox(CheckBox checkBox)
+    {
+        return checkBox != null && checkBox.Tag != null && _checkboxKeys.Contains(Convert.ToString(checkBox.Tag, CultureInfo.InvariantCulture));
     }
 
     public static void Apply(CheckBox checkBox)
@@ -34,17 +47,15 @@ public static class DuhBuhUICheckBoxStyler
         checkBox.Padding = new Thickness(0);
         checkBox.Margin = new Thickness(0, 5, 0, 2);
         checkBox.FontSize = 15;
-        checkBox.Template = checkBox.Tag != null
-            ? CreateToggleTemplate(accent, border, off, text)
-            : CreateCheckBoxTemplate(accent, border, off, text);
+        checkBox.Template = IsRegisteredCheckbox(checkBox)
+            ? CreateCheckBoxTemplate(accent, border, off, text)
+            : CreateToggleTemplate(accent, border, off, text);
     }
 
     private static void OnCheckBoxLoaded(object sender, RoutedEventArgs e)
     {
         CheckBox checkBox = sender as CheckBox;
         if (checkBox == null) return;
-        // Re-apply after the control has a Window so future theme-aware work can
-        // safely inspect the owning window. The template itself is binding based.
         Apply(checkBox);
     }
 
