@@ -13,6 +13,7 @@ public static class DuhBuhUIButtonTheme
     {
         if (_initialized) return;
         _initialized = true;
+        DuhBuhUICheckBoxStyler.Initialize();
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
     }
 
