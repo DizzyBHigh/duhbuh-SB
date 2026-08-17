@@ -95,9 +95,12 @@ public sealed class DatePicker : Control
         Border calendarBorder = new Border { Background = new SolidColorBrush(PanelBackground), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(10) };
         StackPanel calendarPanel = new StackPanel(); calendarBorder.Child = calendarPanel; root.Children.Add(calendarBorder);
         StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
-        Button today = MakePopupButton("Today", 104); Button cancel = MakePopupButton("Cancel", 104); today.Margin = new Thickness(0, 0, 8, 0);
-        today.Click += delegate { SelectedDate = DateTime.Today; ClosePopup(); }; cancel.Click += delegate { ClosePopup(); };
-        buttons.Children.Add(today); buttons.Children.Add(cancel); root.Children.Add(buttons);
+        Button today = MakePopupButton("Today", 104); Button cancel = MakePopupButton("Cancel", 104); Button ok = MakePopupButton("OK", 104);
+        today.Margin = new Thickness(0, 0, 8, 0); cancel.Margin = new Thickness(0, 0, 8, 0);
+        today.Click += delegate { SelectedDate = DateTime.Today; ClosePopup(); };
+        cancel.Click += delegate { ClosePopup(); };
+        ok.Click += delegate { ClosePopup(); };
+        buttons.Children.Add(today); buttons.Children.Add(cancel); buttons.Children.Add(ok); root.Children.Add(buttons);
         Action rebuild = null;
         rebuild = delegate
         {
@@ -122,7 +125,7 @@ public sealed class DatePicker : Control
                 DateTime captured = date;
                 day.MouseEnter += delegate { if (!(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date)) day.Background = new SolidColorBrush(HoverColor); };
                 day.MouseLeave += delegate { day.Background = new SolidColorBrush(_selectedDate.HasValue && _selectedDate.Value.Date == captured.Date ? AccentColor : Colors.Transparent); };
-                day.MouseLeftButtonDown += delegate { SelectedDate = captured; ClosePopup(); };
+                day.MouseLeftButtonDown += delegate { SelectedDate = captured; rebuild(); };
                 Grid.SetColumn(day, index % 7); Grid.SetRow(day, index / 7); days.Children.Add(day);
             }
             calendarPanel.Children.Add(days);
@@ -130,13 +133,22 @@ public sealed class DatePicker : Control
         rebuild();
         Border surface = new Border { Background = new SolidColorBrush(PopupBackground), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = root };
         _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = true, Focusable = false, Child = surface, Width = 340 };
-        _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
+        DuhBuhUIPopupCoordinator.Open(_popup, this);
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
     }
 
     private static Button MakeNavButton(string text) { return new Button { Content = text, FontSize = 20, Padding = new Thickness(0, 0, 0, 2), BorderThickness = new Thickness(0), Background = new SolidColorBrush(Colors.Transparent), Foreground = new SolidColorBrush(TextColor), Cursor = Cursors.Hand }; }
     private static Button MakePopupButton(string text, double width) { return new Button { Content = text, Width = width, Height = 38, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = new SolidColorBrush(PanelBackground), Foreground = new SolidColorBrush(TextColor), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
     private void ClosePopup() { if (_popup != null) _popup.IsOpen = false; }
-    private void PopupClosed(object sender, EventArgs e) { if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; } InvalidateVisual(); }
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        Popup popup = _popup;
+        DuhBuhUIPopupCoordinator.Closed(popup);
+        if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; }
+        InvalidateVisual();
+    }
     private void RaiseChanged() { EventHandler handler = SelectedDateChanged; if (handler != null) handler(this, EventArgs.Empty); InvalidateMeasure(); InvalidateVisual(); }
     private static Color BrushColor(Brush brush, Color fallback) { SolidColorBrush solid = brush as SolidColorBrush; return solid == null ? fallback : solid.Color; }
 }

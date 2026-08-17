@@ -126,7 +126,10 @@ public sealed class TimePicker : Control
 
         Border surface = new Border { Background = Brush(PopupBackground), BorderBrush = Brush(BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = root };
         _popup = new Popup { PlacementTarget = this, Placement = PlacementMode.Bottom, VerticalOffset = 6, AllowsTransparency = true, StaysOpen = true, Focusable = false, Child = surface, Width = 300 };
-        _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
+        DuhBuhUIPopupCoordinator.Open(_popup, this);
+        _popup.Closed += PopupClosed;
+        _popup.IsOpen = true;
+        InvalidateVisual();
     }
 
     private DuhBuhUICustomDropdown MakeTimeDropdown()
@@ -137,7 +140,13 @@ public sealed class TimePicker : Control
     private TextBlock MakePickerLabel(string text) { return new TextBlock { Text = text, FontSize = 11, Foreground = Brush(SecondaryColor()), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) }; }
     private static Button MakePopupButton(string text, double width) { return new Button { Content = text, Width = width, Height = 38, FontSize = 13, Padding = new Thickness(8, 6, 8, 6), Background = new SolidColorBrush(PanelBackground), Foreground = new SolidColorBrush(TextColorStatic), BorderBrush = new SolidColorBrush(BorderColor), BorderThickness = new Thickness(1), Cursor = Cursors.Hand }; }
     private void ClosePopup() { if (_popup != null) _popup.IsOpen = false; }
-    private void PopupClosed(object sender, EventArgs e) { if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; } InvalidateVisual(); }
+    private void PopupClosed(object sender, EventArgs e)
+    {
+        Popup popup = _popup;
+        DuhBuhUIPopupCoordinator.Closed(popup);
+        if (_popup != null) { _popup.Closed -= PopupClosed; _popup = null; }
+        InvalidateVisual();
+    }
     private void SetTextValue(string value) { TimeSpan parsed; if (TimeSpan.TryParseExact(value ?? "", new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsed)) SelectedTime = new TimeSpan(parsed.Hours, parsed.Minutes, 0); }
     private void RaiseChanged() { EventHandler handler = SelectedTimeChanged; if (handler != null) handler(this, EventArgs.Empty); InvalidateMeasure(); InvalidateVisual(); }
     private Brush Brush(Color c) { return new SolidColorBrush(c); }
