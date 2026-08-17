@@ -134,6 +134,7 @@ public sealed class TimePicker : Control
     private void OpenTimePopup()
     {
         if (_popup != null && _popup.IsOpen) return;
+        DuhBuhUIPickerPopupManager.Activate(this, ClosePopup);
 
         TimeSpan initial = _selectedTime ?? new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0);
         int selectedHour = initial.Hours;
@@ -314,6 +315,7 @@ public sealed class TimePicker : Control
             _popup.Closed -= PopupClosed;
             _popup = null;
         }
+        DuhBuhUIPickerPopupManager.Deactivate(this);
         InvalidateVisual();
     }
 
