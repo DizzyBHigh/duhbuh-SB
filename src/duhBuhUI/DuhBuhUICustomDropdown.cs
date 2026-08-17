@@ -15,6 +15,7 @@ public sealed class DuhBuhUICustomDropdown : Control
     private bool _focused;
     private Popup _popup;
     private Window _ownerWindow;
+    private static DuhBuhUICustomDropdown _activeDropdown;
 
     private Color _popupBackground = Color.FromRgb(28, 30, 34);
     private Color _panelBackground = Color.FromRgb(36, 39, 45);
@@ -87,8 +88,6 @@ public sealed class DuhBuhUICustomDropdown : Control
         Padding = new Thickness(9, 5, 34, 5);
     }
 
-    // Theme colors are supplied explicitly by duhBuhUI. This keeps the
-    // control independent of WPF ComboBox styles/templates/resources.
     public void ApplyTheme(bool light)
     {
         if (light)
@@ -199,6 +198,10 @@ public sealed class DuhBuhUICustomDropdown : Control
         if (_options.Length == 0) return;
         if (_popup != null && _popup.IsOpen) return;
 
+        if (_activeDropdown != null && !ReferenceEquals(_activeDropdown, this))
+            _activeDropdown.ClosePopup();
+        _activeDropdown = this;
+
         ScrollViewer scroll = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -268,9 +271,6 @@ public sealed class DuhBuhUICustomDropdown : Control
             HorizontalOffset = -1,
             VerticalOffset = 1,
             AllowsTransparency = true,
-            // Do not let Popup's automatic mouse-capture behaviour close the
-            // list on the mouse-up that opened it. We close it explicitly when
-            // an item is selected, Escape is pressed, or the owner is clicked.
             StaysOpen = true,
             Focusable = false,
             Child = surface,
@@ -318,6 +318,8 @@ public sealed class DuhBuhUICustomDropdown : Control
             _popup.Closed -= PopupClosed;
             _popup = null;
         }
+        if (ReferenceEquals(_activeDropdown, this))
+            _activeDropdown = null;
         InvalidateVisual();
     }
 
