@@ -12,6 +12,7 @@ public sealed class DuhBuhUICustomDropdown : Control
     private string[] _options = new string[0];
     private int _selectedIndex = -1;
     private bool _focused;
+    private bool _lightTheme;
 
     private static readonly Color PopupBackground = Color.FromRgb(28, 30, 35);
     private static readonly Color PanelBackground = Color.FromRgb(38, 41, 48);
@@ -83,12 +84,30 @@ public sealed class DuhBuhUICustomDropdown : Control
         Padding = new Thickness(9, 5, 34, 5);
     }
 
+    public void ApplyTheme(bool light)
+    {
+        _lightTheme = light;
+        if (light)
+        {
+            Background = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            Foreground = new SolidColorBrush(Color.FromRgb(30, 32, 38));
+            BorderBrush = new SolidColorBrush(Color.FromRgb(160, 164, 172));
+        }
+        else
+        {
+            Background = new SolidColorBrush(PanelBackground);
+            Foreground = new SolidColorBrush(TextColor);
+            BorderBrush = new SolidColorBrush(BorderColor);
+        }
+        InvalidateVisual();
+    }
+
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        Color bg = BrushColor(Background, PanelBackground);
-        Color fg = BrushColor(Foreground, TextColor);
-        Color edge = _focused ? AccentColor : BrushColor(BorderBrush, BorderColor);
+        Color bg = BrushColor(Background, _lightTheme ? Colors.White : PanelBackground);
+        Color fg = BrushColor(Foreground, _lightTheme ? Color.FromRgb(30, 32, 38) : TextColor);
+        Color edge = _focused ? AccentColor : BrushColor(BorderBrush, _lightTheme ? Color.FromRgb(160, 164, 172) : BorderColor);
         dc.DrawRoundedRectangle(new SolidColorBrush(bg), new Pen(new SolidColorBrush(edge), 1),
             new Rect(0.5, 0.5, Math.Max(0, ActualWidth - 1), Math.Max(0, ActualHeight - 1)), 3, 3);
 
