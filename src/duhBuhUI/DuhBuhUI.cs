@@ -1,6 +1,5 @@
 // duhBuhUI - self-contained settings UI framework for Streamer.bot C# actions.
 // UI controls are created on a dedicated STA thread.
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -26,24 +25,17 @@ public sealed class DuhBuhUI
     private readonly List<string> _categories = new List<string>();
     private readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
     private int _definitionOrder;
-
     private const string DefaultDarkHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
     private const string DefaultLightHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
-
-    private sealed class ControlDefinition
-    {
-        public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options; public int Order;
-    }
+    private sealed class ControlDefinition { public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options; public int Order; }
     private sealed class TitleDefinition { public string Title; public string Category; public int Order; }
     private sealed class ButtonDefinition { public string Title; public string Description; public string ButtonText; public string Color; public string Category; public Action Callback; public int Order; }
 
     public DuhBuhUI(string extensionName, string extensionVersion, Func<string, bool, bool?> getBool, Func<string, bool, int?> getInt, Func<string, bool, string> getString, Func<string, bool, object> getObject, Action<string, object, bool> setGlobal, Action<string> logInfo)
     {
         _extensionName = extensionName ?? "duhBuh"; _extensionVersion = extensionVersion ?? "0.1.0"; _getBool = getBool; _getInt = getInt; _getString = getString; _getObject = getObject; _setGlobal = setGlobal; _logInfo = logInfo;
-        _defaults["__duhbuh_headerDarkImage"] = DefaultDarkHeader;
-        _defaults["__duhbuh_headerLightImage"] = DefaultLightHeader;
+        _defaults["__duhbuh_headerDarkImage"] = DefaultDarkHeader; _defaults["__duhbuh_headerLightImage"] = DefaultLightHeader;
     }
-
     public void AddHeader(string imageUrl) { AddHeader(imageUrl, imageUrl); }
     public void AddHeader(string darkImageUrl, string lightImageUrl) { RegisterCategory("__header"); _defaults["__duhbuh_headerDarkImage"] = darkImageUrl ?? ""; _defaults["__duhbuh_headerLightImage"] = lightImageUrl ?? ""; }
     public void AddThemeSelector(string title, string description, string category, string variableName, string defaultValue) { AddDropdown(title, description, category, variableName, new[] { "Dark", "Light", "System" }, defaultValue); }
@@ -67,7 +59,6 @@ public sealed class DuhBuhUI
         Thread uiThread = new Thread((ThreadStart)delegate { try { Window window = BuildWindow(); window.ShowDialog(); } catch (Exception ex) { threadError = ex; } });
         uiThread.SetApartmentState(ApartmentState.STA); uiThread.IsBackground = false; uiThread.Start(); uiThread.Join(); if (threadError != null) throw threadError;
     }
-
     private Window BuildWindow()
     {
         string theme = Read("duhbuh_ui_theme", "Dark"); if (string.Equals(theme, "System", StringComparison.OrdinalIgnoreCase)) theme = "Dark";
@@ -80,135 +71,57 @@ public sealed class DuhBuhUI
         for (int i = 0; i < _categories.Count; i++) { string category = _categories[i]; if (category == "__header") continue; StackPanel panel = new StackPanel { Margin = new Thickness(18) }; BuildCategory(panel, category, theme); tabs.Items.Add(new TabItem { Header = category, Content = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = panel } }); }
         root.Children.Add(tabs); window.Content = root; return window;
     }
-
     private StackPanel BuildHeader(string theme)
     {
-        bool light = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase);
-        string key = light ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage";
-        string headerImage = "";
-        object configured;
+        bool light = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase); string key = light ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage"; string headerImage = ""; object configured;
         if (_defaults.TryGetValue(key, out configured) && configured != null) headerImage = Convert.ToString(configured, CultureInfo.InvariantCulture);
-        try { string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri; if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved; }
-        catch (Exception ex) { _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message); }
-        _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage);
-        StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
-        if (!string.IsNullOrWhiteSpace(headerImage))
-        {
-            try { BitmapImage bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit(); Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) }; panel.Children.Add(image); _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage); }
-            catch (Exception ex) { _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message); panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) }); }
-        }
+        try { string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri; if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved; } catch (Exception ex) { _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message); }
+        _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage); StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
+        if (!string.IsNullOrWhiteSpace(headerImage)) { try { BitmapImage bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit(); Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) }; panel.Children.Add(image); _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage); } catch (Exception ex) { _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message); panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) }); } }
         panel.Children.Add(new TextBlock { Text = _extensionName + "  •  v" + _extensionVersion, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) }); return panel;
     }
 
     private void BuildCategory(StackPanel panel, string category, string theme)
     {
-        List<object> elements = new List<object>();
-        for (int i = 0; i < _titles.Count; i++) if (_titles[i].Category == category) elements.Add(_titles[i]);
-        for (int i = 0; i < _controls.Count; i++) if (_controls[i].Category == category) elements.Add(_controls[i]);
-        for (int i = 0; i < _buttons.Count; i++) if (_buttons[i].Category == category) elements.Add(_buttons[i]);
+        List<object> elements = new List<object>(); for (int i = 0; i < _titles.Count; i++) if (_titles[i].Category == category) elements.Add(_titles[i]); for (int i = 0; i < _controls.Count; i++) if (_controls[i].Category == category) elements.Add(_controls[i]); for (int i = 0; i < _buttons.Count; i++) if (_buttons[i].Category == category) elements.Add(_buttons[i]);
         elements.Sort(delegate(object a, object b) { int ao = a is TitleDefinition ? ((TitleDefinition)a).Order : (a is ControlDefinition ? ((ControlDefinition)a).Order : ((ButtonDefinition)a).Order); int bo = b is TitleDefinition ? ((TitleDefinition)b).Order : (b is ControlDefinition ? ((ControlDefinition)b).Order : ((ButtonDefinition)b).Order); return ao.CompareTo(bo); });
-
         for (int e = 0; e < elements.Count; e++)
         {
-            TitleDefinition title = elements[e] as TitleDefinition;
-            if (title != null) { panel.Children.Add(new TextBlock { Text = title.Title, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 10, 0, 12) }); continue; }
+            TitleDefinition title = elements[e] as TitleDefinition; if (title != null) { panel.Children.Add(new TextBlock { Text = title.Title, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 10, 0, 12) }); continue; }
             ControlDefinition d = elements[e] as ControlDefinition;
             if (d != null)
             {
-                if (d.Type == "toggle")
-                {
-                    StackPanel box = FieldBox(theme, d.Description);
-                    CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key };
-                    DuhBuhUICheckBoxStyler.Apply(toggle);
-                    box.Children.Insert(0, toggle);
-                    panel.Children.Add(box);
-                }
-                else if (d.Type == "slider")
-                {
-                    StackPanel box = FieldBox(theme, d.Description);
-                    int value = Read(d.Key, (int)d.DefaultValue);
-                    TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") };
-                    DuhBuhUICustomSlider slider = new DuhBuhUICustomSlider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, Tag = d.Key, Margin = new Thickness(3, 5, 3, 5) };
-                    slider.ValueChanged += delegate { label.Text = d.Title + ": " + ((int)Math.Round(slider.Value)); };
-                    box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box);
-                }
+                if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }; DuhBuhUICheckBoxStyler.Apply(toggle); box.Children.Insert(0, toggle); panel.Children.Add(box); }
+                else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; DuhBuhUICustomSlider slider = new DuhBuhUICustomSlider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, Tag = d.Key, Margin = new Thickness(3, 5, 3, 5) }; slider.ValueChanged += delegate { label.Text = d.Title + ": " + ((int)Math.Round(slider.Value)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
                 else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
                 else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
                 else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Key == "duhbuh_overlay_lurks_position" && d.Options.Length == 9) { Grid group = new Grid { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int r = 0; r < 3; r++) { group.RowDefinitions.Add(new RowDefinition()); group.ColumnDefinitions.Add(new ColumnDefinition()); } for (int j = 0; j < d.Options.Length; j++) { RadioButton radio = new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }; Grid.SetRow(radio, j / 3); Grid.SetColumn(radio, j % 3); group.Children.Add(radio); } box.Children.Insert(1, group); } else { StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); } panel.Children.Add(box); }
                 else if (d.Type == "color") BuildColorControl(panel, d, theme);
-                else if (d.Type == "date")
-                {
-                    StackPanel box = FieldBox(theme, d.Description);
-                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
-                    string current = Read(d.Key, (string)d.DefaultValue);
-                    box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) });
-                    panel.Children.Add(box);
-                }
-                else if (d.Type == "time")
-                {
-                    StackPanel box = FieldBox(theme, d.Description);
-                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
-                    string current = Read(d.Key, (string)d.DefaultValue);
-                    TimeSpan parsedTime;
-                    TimeSpan? selected = TimeSpan.TryParseExact(current, new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null;
-                    box.Children.Insert(1, new TimePicker { Tag = d.Key, SelectedTime = selected });
-                    panel.Children.Add(box);
-                }
-                else if (d.Type == "datetime")
-                {
-                    StackPanel box = FieldBox(theme, d.Description);
-                    box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
-                    string current = Read(d.Key, (string)d.DefaultValue);
-                    DatePicker date = new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) };
-                    TimeSpan parsedTime;
-                    TimeSpan? selectedTime = TimeSpan.TryParseExact(ExtractTime(current), new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null;
-                    TimePicker time = new TimePicker { Tag = d.Key + "::time", SelectedTime = selectedTime, Margin = new Thickness(0, 4, 0, 0) };
-                    box.Children.Insert(1, date);
-                    box.Children.Insert(2, time);
-                    panel.Children.Add(box);
-                }
+                else if (d.Type == "date") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); box.Children.Insert(1, new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }); panel.Children.Add(box); }
+                else if (d.Type == "time") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); TimeSpan parsedTime; TimeSpan? selected = TimeSpan.TryParseExact(current, new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null; box.Children.Insert(1, new TimePicker { Tag = d.Key, SelectedTime = selected }); panel.Children.Add(box); }
+                else if (d.Type == "datetime") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); DatePicker date = new DatePicker { Tag = d.Key, SelectedDate = ParseDate(current) }; TimeSpan parsedTime; TimeSpan? selectedTime = TimeSpan.TryParseExact(ExtractTime(current), new[] { @"hh\:mm", @"h\:mm", @"HH\:mm", @"H\:mm" }, CultureInfo.InvariantCulture, out parsedTime) ? (TimeSpan?)parsedTime : null; TimePicker time = new TimePicker { Tag = d.Key + "::time", SelectedTime = selectedTime, Margin = new Thickness(0, 4, 0, 0) }; box.Children.Insert(1, date); box.Children.Insert(2, time); panel.Children.Add(box); }
                 continue;
             }
-            ButtonDefinition buttonDefinition = elements[e] as ButtonDefinition;
-            if (buttonDefinition != null) { StackPanel box = FieldBox(theme, buttonDefinition.Description); box.Children.Insert(0, new TextBlock { Text = buttonDefinition.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = buttonDefinition.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = buttonDefinition.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
+            ButtonDefinition buttonDefinition = elements[e] as ButtonDefinition; if (buttonDefinition != null) { StackPanel box = FieldBox(theme, buttonDefinition.Description); box.Children.Insert(0, new TextBlock { Text = buttonDefinition.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); Button button = new Button { Content = buttonDefinition.ButtonText, Padding = new Thickness(12, 6, 12, 6), HorizontalAlignment = HorizontalAlignment.Left }; Action callback = buttonDefinition.Callback; button.Click += delegate { if (callback != null) callback(); }; box.Children.Insert(1, button); panel.Children.Add(box); }
         }
     }
 
     private void BuildColorControl(StackPanel panel, ControlDefinition d, string theme)
     {
-        StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") });
-        string current = NormalizeColor(Read(d.Key, (string)d.DefaultValue)); if (current == "") current = "#FFFFFFFF";
-        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), Tag = d.Key };
-        Button swatch = new Button { Width = 42, Height = 30, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key, ToolTip = "Click to choose a colour" };
-        TextBox hex = new TextBox { Text = current, Width = 120, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key };
-        Button choose = new Button { Content = "Choose…", Padding = new Thickness(10, 4, 10, 4), Tag = d.Key }; SetSwatch(swatch, current);
-        swatch.Click += delegate { OpenColorPicker(hex, swatch, theme); }; choose.Click += delegate { OpenColorPicker(hex, swatch, theme); }; hex.LostFocus += delegate { string c = NormalizeColor(hex.Text); if (c != "") { hex.Text = c; SetSwatch(swatch, c); } };
-        row.Children.Add(swatch); row.Children.Add(hex); row.Children.Add(choose); box.Children.Insert(1, row); box.Children.Insert(2, new TextBlock { Text = "Use the swatch or enter #RRGGBB / #AARRGGBB", Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 2, 0, 0) }); panel.Children.Add(box);
+        StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = NormalizeColor(Read(d.Key, (string)d.DefaultValue)); if (current == "") current = "#FFFFFFFF";
+        StackPanel row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0), Tag = d.Key }; Button swatch = new Button { Width = 42, Height = 30, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key, ToolTip = "Click to choose a colour" }; TextBox hex = new TextBox { Text = current, Width = 120, VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Tag = d.Key }; Button choose = new Button { Content = "Choose…", Padding = new Thickness(10, 4, 10, 4), Tag = d.Key }; SetSwatch(swatch, current);
+        swatch.Click += delegate { OpenColorPicker(hex, swatch, theme); }; choose.Click += delegate { OpenColorPicker(hex, swatch, theme); }; hex.LostFocus += delegate { string c = NormalizeColor(hex.Text); if (c != "") { hex.Text = c; SetSwatch(swatch, c); } }; row.Children.Add(swatch); row.Children.Add(hex); row.Children.Add(choose); box.Children.Insert(1, row); box.Children.Insert(2, new TextBlock { Text = "Use the swatch or enter #RRGGBB / #AARRGGBB", Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 2, 0, 0) }); panel.Children.Add(box);
     }
-
-    private StackPanel FieldBox(string theme, string description)
-    {
-        StackPanel box = new StackPanel { Margin = new Thickness(0, 4, 0, 14) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 3, 0, 0) }); return box;
-    }
-
+    private StackPanel FieldBox(string theme, string description) { StackPanel box = new StackPanel { Margin = new Thickness(0, 4, 0, 14) }; if (!string.IsNullOrWhiteSpace(description)) box.Children.Add(new TextBlock { Text = description, TextWrapping = TextWrapping.Wrap, Foreground = ThemeBrush(theme, "SecondaryText"), Margin = new Thickness(0, 3, 0, 0) }); return box; }
     private void OpenColorPicker(TextBox target, Button swatch, string theme)
     {
-        string initial = NormalizeColor(target.Text); if (initial == "") initial = "#FFFFFFFF";
-        Window picker = new Window { Title = "Choose Colour", Width = 520, Height = 480, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = ThemeBrush(theme, "WindowBackground") };
-        StackPanel root = new StackPanel { Margin = new Thickness(18) };
-        root.Children.Add(new TextBlock { Text = "Choose a notification colour", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 0, 0, 10) });
-        Border preview = new Border { Height = 46, CornerRadius = new System.Windows.CornerRadius(4), Margin = new Thickness(0, 0, 0, 12), BorderBrush = ThemeBrush(theme, "SecondaryText"), BorderThickness = new Thickness(1) };
-        TextBlock previewText = new TextBlock { Text = initial, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, FontWeight = FontWeights.Bold }; preview.Child = previewText; SetPreview(preview, previewText, initial); root.Children.Add(preview);
-        TextBox custom = null;
-        WrapPanel palette = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 12) };
-        string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C7576" };
+        string initial = NormalizeColor(target.Text); if (initial == "") initial = "#FFFFFFFF"; Window picker = new Window { Title = "Choose Colour", Width = 520, Height = 480, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = ThemeBrush(theme, "WindowBackground") }; StackPanel root = new StackPanel { Margin = new Thickness(18) };
+        root.Children.Add(new TextBlock { Text = "Choose a notification colour", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 0, 0, 10) }); Border preview = new Border { Height = 46, CornerRadius = new System.Windows.CornerRadius(4), Margin = new Thickness(0, 0, 0, 12), BorderBrush = ThemeBrush(theme, "SecondaryText"), BorderThickness = new Thickness(1) }; TextBlock previewText = new TextBlock { Text = initial, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, FontWeight = FontWeights.Bold }; preview.Child = previewText; SetPreview(preview, previewText, initial); root.Children.Add(preview);
+        TextBox custom = null; WrapPanel palette = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 12) }; string[] colours = new[] { "#FFFFFFFF", "#FFF2F2F2", "#FFBFBFBF", "#FF808080", "#FF404040", "#FF000000", "#FFFF0000", "#FFFF8000", "#FFFFFF00", "#FF80FF00", "#FF00FF00", "#FF00FFFF", "#FF0080FF", "#FF0000FF", "#FF8000FF", "#FFFF00FF", "#FFFF80C0", "#FF804000", "#FF800000", "#FF808000", "#FF008000", "#FF008080", "#FF000080", "#FF800080", "#FF00AEEF", "#FF0077B6", "#FF3A86FF", "#FF8338EC", "#FFFF006E", "#FFFB5607", "#FFFFBE0B", "#FF2A9D8F", "#FF06D6A0", "#FF118AB2", "#FFEF476F", "#FF6C7576" };
         for (int i = 0; i < colours.Length; i++) { string colour = colours[i]; Button swatchButton = new Button { Width = 38, Height = 32, Margin = new Thickness(3), Tag = colour, ToolTip = colour, Padding = new Thickness(0) }; swatchButton.Background = BrushFromHex(colour); swatchButton.BorderBrush = ThemeBrush(theme, "SecondaryText"); swatchButton.Click += delegate(object sender, RoutedEventArgs e) { string selected = (string)((Button)sender).Tag; custom.Text = selected; SetPreview(preview, previewText, selected); }; palette.Children.Add(swatchButton); }
-        root.Children.Add(palette);
-        StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) }; TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; custom = new TextBox { Text = initial, Width = 150, VerticalContentContentAlignment = VerticalAlignment.Center }; Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) }; customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
-        custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); };
-        StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right }; Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) }; ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); }; buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
+        root.Children.Add(palette); StackPanel customRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) }; TextBlock customLabel = new TextBlock { Text = "Custom:", Foreground = ThemeBrush(theme, "PrimaryText"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }; custom = new TextBox { Text = initial, Width = 150 }; Button applyCustom = new Button { Content = "Apply", Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(8, 0, 0, 0) }; customRow.Children.Add(customLabel); customRow.Children.Add(custom); customRow.Children.Add(applyCustom); root.Children.Add(customRow);
+        custom.TextChanged += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; applyCustom.Click += delegate { string c = NormalizeColor(custom.Text); if (c != "") SetPreview(preview, previewText, c); }; StackPanel buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right }; Button ok = new Button { Content = "OK", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 8, 0) }; Button cancel = new Button { Content = "Cancel", Padding = new Thickness(16, 6, 16, 6) }; ok.Click += delegate { string c = NormalizeColor(custom.Text); if (c == "") c = initial; target.Text = c; SetSwatch(swatch, c); picker.Close(); }; cancel.Click += delegate { picker.Close(); }; buttons.Children.Add(ok); buttons.Children.Add(cancel); root.Children.Add(buttons); picker.Content = root; picker.ShowDialog();
     }
-
     private void SetPreview(Border preview, TextBlock text, string colour) { preview.Background = BrushFromHex(colour); text.Text = colour; Color c; try { c = (Color)ColorConverter.ConvertFromString(colour); } catch { c = Colors.White; } double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0; text.Foreground = luminance > 0.6 ? Brushes.Black : Brushes.White; }
     private void SetSwatch(Button button, string value) { button.Background = BrushFromHex(value); button.BorderBrush = new SolidColorBrush(Color.FromArgb(180, 120, 120, 120)); }
     private Brush BrushFromHex(string value) { try { return new SolidColorBrush((Color)ColorConverter.ConvertFromString(NormalizeColor(value))); } catch { return Brushes.Transparent; } }
@@ -224,128 +137,45 @@ public sealed class DuhBuhUI
 
     private void Save(DockPanel root)
     {
-        foreach (KeyValuePair<string, object> item in _defaults)
-        {
-            if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue;
-            SaveTagged(root, item.Key);
-        }
+        foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; SaveTagged(root, item.Key); }
         _logInfo("[duhBuhUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + ".");
     }
-
     private void SaveTagged(DependencyObject parent, string key)
     {
         foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
         {
-            DependencyObject dep = childObject as DependencyObject;
-            if (dep == null) continue;
-
-            FrameworkElement fe = dep as FrameworkElement;
+            DependencyObject dep = childObject as DependencyObject; if (dep == null) continue; FrameworkElement fe = dep as FrameworkElement;
             if (fe != null && Equals(fe.Tag, key))
             {
-                DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider;
-                if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
-
-                CheckBox cb = fe as CheckBox;
-                if (cb != null) _setGlobal(key, cb.IsChecked == true, true);
-
-                Slider sl = fe as Slider;
-                if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true);
-
-                TextBox tb = fe as TextBox;
-                if (tb != null) _setGlobal(key, tb.Text, true);
-
-                ComboBox combo = fe as ComboBox;
-                if (combo != null) _setGlobal(key, combo.SelectedItem == null ? "" : combo.SelectedItem.ToString(), true);
-
+                DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider; if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
+                CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true);
+                Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true);
+                TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true);
+                ComboBox combo = fe as ComboBox; if (combo != null) _setGlobal(key, combo.SelectedItem == null ? "" : combo.SelectedItem.ToString(), true);
                 TimePicker timePicker = fe as TimePicker;
                 if (timePicker != null)
                 {
                     string timeText = timePicker.SelectedTime.HasValue ? timePicker.SelectedTime.Value.ToString("hh\\:mm", CultureInfo.InvariantCulture) : "";
                     DatePicker siblingDate = FindTaggedDatePicker(parent, key);
-                    if (siblingDate != null)
-                    {
-                        string dateText = siblingDate.SelectedDate.HasValue ? siblingDate.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
-                        _setGlobal(key, string.IsNullOrWhiteSpace(dateText) ? timeText : dateText + " " + timeText, true);
-                    }
-                    else
-                    {
-                        _setGlobal(key, timeText, true);
-                    }
+                    _setGlobal(key, siblingDate == null ? timeText : CombineDateTime(siblingDate.SelectedDate, timeText), true);
                 }
-
                 StackPanel group = fe as StackPanel;
-                if (group != null && group.Tag != null)
-                    for (int i = 0; i < group.Children.Count; i++)
-                    {
-                        RadioButton radio = group.Children[i] as RadioButton;
-                        if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true);
-                    }
-
+                if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { RadioButton radio = group.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); }
                 Grid gridGroup = fe as Grid;
-                if (gridGroup != null && gridGroup.Tag != null)
-                    for (int i = 0; i < gridGroup.Children.Count; i++)
-                    {
-                        RadioButton radio = gridGroup.Children[i] as RadioButton;
-                        if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true);
-                    }
-
+                if (gridGroup != null && gridGroup.Tag != null) for (int i = 0; i < gridGroup.Children.Count; i++) { RadioButton radio = gridGroup.Children[i] as RadioButton; if (radio != null && radio.IsChecked == true) _setGlobal(key, radio.Content == null ? "" : radio.Content.ToString(), true); }
                 DatePicker date = fe as DatePicker;
                 if (date != null)
                 {
                     string dateText = date.SelectedDate.HasValue ? date.SelectedDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
                     TimePicker siblingTime = FindTaggedTimePicker(parent, key + "::time");
-                    if (siblingTime != null)
-                    {
-                        string timeText = siblingTime.SelectedTime.HasValue ? siblingTime.SelectedTime.Value.ToString("hh\\:mm", CultureInfo.InvariantCulture) : "";
-                        _setGlobal(key, string.IsNullOrWhiteSpace(dateText) ? timeText : dateText + " " + timeText, true);
-                    }
-                    else
-                    {
-                        _setGlobal(key, dateText, true);
-                    }
+                    _setGlobal(key, siblingTime == null ? dateText : CombineDateTime(date.SelectedDate, siblingTime.SelectedTime.HasValue ? siblingTime.SelectedTime.Value.ToString("hh\\:mm", CultureInfo.InvariantCulture) : ""), true);
                 }
-
-                if (group != null && group.Tag != null)
-                    for (int i = 0; i < group.Children.Count; i++)
-                    {
-                        TextBox colorBox = group.Children[i] as TextBox;
-                        if (colorBox != null)
-                        {
-                            string color = NormalizeColor(colorBox.Text);
-                            if (color != "") { _setGlobal(key, color, true); break; }
-                        }
-                    }
+                if (group != null && group.Tag != null) for (int i = 0; i < group.Children.Count; i++) { TextBox colorBox = group.Children[i] as TextBox; if (colorBox != null) { string color = NormalizeColor(colorBox.Text); if (color != "") { _setGlobal(key, color, true); break; } } }
             }
-
             SaveTagged(dep, key);
         }
     }
-
-    private DatePicker FindTaggedDatePicker(DependencyObject parent, string key)
-    {
-        foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
-        {
-            DependencyObject child = childObject as DependencyObject;
-            if (child == null) continue;
-            DatePicker date = child as DatePicker;
-            if (date != null && Equals(date.Tag, key)) return date;
-            DatePicker nested = FindTaggedDatePicker(child, key);
-            if (nested != null) return nested;
-        }
-        return null;
-    }
-
-    private TimePicker FindTaggedTimePicker(DependencyObject parent, string key)
-    {
-        foreach (object childObject in LogicalTreeHelper.GetChildren(parent))
-        {
-            DependencyObject child = childObject as DependencyObject;
-            if (child == null) continue;
-            TimePicker time = child as TimePicker;
-            if (time != null && Equals(time.Tag, key)) return time;
-            TimePicker nested = FindTaggedTimePicker(child, key);
-            if (nested != null) return nested;
-        }
-        return null;
-    }
+    private string CombineDateTime(DateTime? date, string time) { if (!date.HasValue) return time ?? ""; return string.IsNullOrWhiteSpace(time) ? date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " " + time; }
+    private DatePicker FindTaggedDatePicker(DependencyObject parent, string key) { foreach (object childObject in LogicalTreeHelper.GetChildren(parent)) { DependencyObject child = childObject as DependencyObject; if (child == null) continue; DatePicker date = child as DatePicker; if (date != null && Equals(date.Tag, key)) return date; DatePicker nested = FindTaggedDatePicker(child, key); if (nested != null) return nested; } return null; }
+    private TimePicker FindTaggedTimePicker(DependencyObject parent, string key) { foreach (object childObject in LogicalTreeHelper.GetChildren(parent)) { DependencyObject child = childObject as DependencyObject; if (child == null) continue; TimePicker time = child as TimePicker; if (time != null && Equals(time.Tag, key)) return time; TimePicker nested = FindTaggedTimePicker(child, key); if (nested != null) return nested; } return null; }
 }
