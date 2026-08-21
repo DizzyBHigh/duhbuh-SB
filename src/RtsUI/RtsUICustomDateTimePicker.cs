@@ -6,7 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// duhBuhUI custom combined date/time picker. The control owns the field and
+// RtsUI custom combined date/time picker. The control owns the field and
 // anchored popup; WPF is used only as the window/input foundation.
 public sealed class DateTimePicker : Control
 {
@@ -134,8 +134,8 @@ public sealed class DateTimePicker : Control
         root.Children.Add(calendarBorder);
 
         Action rebuildCalendar = null;
-        DuhBuhUICustomDropdown hours = MakeTimeDropdown();
-        DuhBuhUICustomDropdown minutes = MakeTimeDropdown();
+        RtsUICustomDropdown hours = MakeTimeDropdown();
+        RtsUICustomDropdown minutes = MakeTimeDropdown();
         string[] hourOptions = new string[24];
         string[] minuteOptions = new string[60];
         for (int i = 0; i < 24; i++) hourOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
@@ -242,9 +242,9 @@ public sealed class DateTimePicker : Control
     }
 
     private DateTime SelectedCalendarDate(DateTime initial, DateTime displayMonth) { if (initial.Year == displayMonth.Year && initial.Month == displayMonth.Month) return initial.Date; return new DateTime(displayMonth.Year, displayMonth.Month, Math.Min(initial.Day, DateTime.DaysInMonth(displayMonth.Year, displayMonth.Month))); }
-    private DuhBuhUICustomDropdown MakeTimeDropdown()
+    private RtsUICustomDropdown MakeTimeDropdown()
     {
-        DuhBuhUICustomDropdown d = new DuhBuhUICustomDropdown { MinWidth = 120, Height = 32 };
+        RtsUICustomDropdown d = new RtsUICustomDropdown { MinWidth = 120, Height = 32 };
         d.ApplyTheme(_lightTheme); return d;
     }
     private static Button MakeNavButton(string text) { return new Button { Content = text, FontSize = 20, Padding = new Thickness(0, 0, 0, 2), BorderThickness = new Thickness(0), Background = new SolidColorBrush(Colors.Transparent), Foreground = new SolidColorBrush(Color.FromRgb(240, 242, 245)), Cursor = Cursors.Hand }; }

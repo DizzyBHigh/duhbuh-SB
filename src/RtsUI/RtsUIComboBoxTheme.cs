@@ -6,9 +6,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 
-// Shared custom ComboBox appearance for duhBuhUI. WPF supplies the control
+// Shared custom ComboBox appearance for RtsUI. WPF supplies the control
 // plumbing, while this template owns the field, arrow, popup and item visuals.
-public static class DuhBuhUIComboBoxTheme
+public static class RtsUIComboBoxTheme
 {
     private static readonly Color DarkBackground = Color.FromRgb(38, 41, 48);
     private static readonly Color DarkPopup = Color.FromRgb(30, 33, 39);

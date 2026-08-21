@@ -3,14 +3,14 @@
     <TargetFramework>net48</TargetFramework>
     <UseWPF>true</UseWPF>
     <OutputType>Library</OutputType>
-    <AssemblyName>duhBuhUI</AssemblyName>
-    <RootNamespace>duhBuhUI</RootNamespace>
+    <AssemblyName>RtsUI</AssemblyName>
+    <RootNamespace>RtsUI</RootNamespace>
     <LangVersion>9.0</LangVersion>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <AssemblyTitle>duhBuhUI</AssemblyTitle>
-    <AssemblyProduct>duhBuhUI</AssemblyProduct>
+    <AssemblyTitle>RtsUI</AssemblyTitle>
+    <AssemblyProduct>RtsUI</AssemblyProduct>
     <AssemblyDescription>Reusable settings UI library for Streamer.bot C# actions.</AssemblyDescription>
     <Version>0.1.0</Version>
   </PropertyGroup>

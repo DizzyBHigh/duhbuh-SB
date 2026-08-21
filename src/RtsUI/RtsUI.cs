@@ -1,4 +1,4 @@
-// duhBuhUI - self-contained settings UI framework for Streamer.bot C# actions.
+// RtsUI - self-contained settings UI framework for Streamer.bot C# actions.
 // UI controls are created on a dedicated STA thread.
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-public sealed class DuhBuhUI
+public sealed class RtsUI
 {
     private readonly Func<string, bool, bool?> _getBool;
     private readonly Func<string, bool, int?> _getInt;
@@ -31,13 +31,13 @@ public sealed class DuhBuhUI
     private sealed class TitleDefinition { public string Title; public string Category; public int Order; }
     private sealed class ButtonDefinition { public string Title; public string Description; public string ButtonText; public string Color; public string Category; public Action Callback; public int Order; }
 
-    public DuhBuhUI(string extensionName, string extensionVersion, Func<string, bool, bool?> getBool, Func<string, bool, int?> getInt, Func<string, bool, string> getString, Func<string, bool, object> getObject, Action<string, object, bool> setGlobal, Action<string> logInfo)
+    public RtsUI(string extensionName, string extensionVersion, Func<string, bool, bool?> getBool, Func<string, bool, int?> getInt, Func<string, bool, string> getString, Func<string, bool, object> getObject, Action<string, object, bool> setGlobal, Action<string> logInfo)
     {
         _extensionName = extensionName ?? "duhBuh"; _extensionVersion = extensionVersion ?? "0.1.0"; _getBool = getBool; _getInt = getInt; _getString = getString; _getObject = getObject; _setGlobal = setGlobal; _logInfo = logInfo;
-        _defaults["__duhbuh_headerDarkImage"] = DefaultDarkHeader; _defaults["__duhbuh_headerLightImage"] = DefaultLightHeader;
+        _defaults["__rts_headerDarkImage"] = DefaultDarkHeader; _defaults["__rts_headerLightImage"] = DefaultLightHeader;
     }
     public void AddHeader(string imageUrl) { AddHeader(imageUrl, imageUrl); }
-    public void AddHeader(string darkImageUrl, string lightImageUrl) { RegisterCategory("__header"); _defaults["__duhbuh_headerDarkImage"] = darkImageUrl ?? ""; _defaults["__duhbuh_headerLightImage"] = lightImageUrl ?? ""; }
+    public void AddHeader(string darkImageUrl, string lightImageUrl) { RegisterCategory("__header"); _defaults["__rts_headerDarkImage"] = darkImageUrl ?? ""; _defaults["__rts_headerLightImage"] = lightImageUrl ?? ""; }
     public void AddThemeSelector(string title, string description, string category, string variableName, string defaultValue) { AddDropdown(title, description, category, variableName, new[] { "Dark", "Light", "System" }, defaultValue); }
     public void AddRadioGroup(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "radio", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0], Order = _definitionOrder++ }); }
     public void AddDropdown(string title, string description, string category, string variableName, string[] options, string defaultValue) { RegisterCategory(category); _defaults[variableName] = defaultValue ?? (options != null && options.Length > 0 ? options[0] : ""); _controls.Add(new ControlDefinition { Type = "dropdown", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = _defaults[variableName], Options = options ?? new string[0], Order = _definitionOrder++ }); }
@@ -51,7 +51,7 @@ public sealed class DuhBuhUI
     public void AddTextbox(string title, string description, string category, string variableName, string defaultValue, bool multiline) { RegisterCategory(category); _defaults[variableName] = defaultValue; _controls.Add(new ControlDefinition { Type = "textbox", Title = title, Description = description, Category = category, Key = variableName, DefaultValue = defaultValue, Multiline = multiline, Order = _definitionOrder++ }); }
     public void AddClickableButton(string title, string description, string buttonText, string color, string category, Action callback) { RegisterCategory(category); _buttons.Add(new ButtonDefinition { Title = title, Description = description, ButtonText = buttonText, Color = color, Category = category, Callback = callback, Order = _definitionOrder++ }); }
     public void AddPopupWindow(string title, string message) { MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information); }
-    public void LogExistingSettings() { foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; object value = ReadObject(item.Key, item.Value); _logInfo("[duhBuhUI] " + item.Key + " = " + Convert.ToString(value, CultureInfo.InvariantCulture)); } }
+    public void LogExistingSettings() { foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__rts_", StringComparison.Ordinal)) continue; object value = ReadObject(item.Key, item.Value); _logInfo("[RtsUI] " + item.Key + " = " + Convert.ToString(value, CultureInfo.InvariantCulture)); } }
 
     public void ShowUI()
     {
@@ -61,9 +61,9 @@ public sealed class DuhBuhUI
     }
     private Window BuildWindow()
     {
-        string theme = Read("duhbuh_ui_theme", "Dark"); if (string.Equals(theme, "System", StringComparison.OrdinalIgnoreCase)) theme = "Dark";
+        string theme = Read("__rts_ui_theme", "Dark"); if (string.Equals(theme, "System", StringComparison.OrdinalIgnoreCase)) theme = "Dark";
         Window window = new Window { Title = _extensionName + " - Settings", Width = 760, Height = 920, MinWidth = 600, MinHeight = 650, WindowStartupLocation = WindowStartupLocation.CenterScreen, Background = ThemeBrush(theme, "WindowBackground") };
-        DuhBuhUICheckBoxStyler.Initialize();
+        RtsUICheckBoxStyler.Initialize();
         DockPanel root = new DockPanel(); StackPanel header = BuildHeader(theme); if (header != null) { DockPanel.SetDock(header, Dock.Top); root.Children.Add(header); }
         StackPanel footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12) };
         Button save = new Button { Content = "Save", Padding = new Thickness(18, 7, 18, 7), Margin = new Thickness(0, 0, 8, 0) }; Button close = new Button { Content = "Save & Exit", Padding = new Thickness(18, 7, 18, 7) }; save.Click += delegate { Save(root); }; close.Click += delegate { Save(root); window.Close(); }; footer.Children.Add(save); footer.Children.Add(close); DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
@@ -73,11 +73,11 @@ public sealed class DuhBuhUI
     }
     private StackPanel BuildHeader(string theme)
     {
-        bool light = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase); string key = light ? "__duhbuh_headerLightImage" : "__duhbuh_headerDarkImage"; string headerImage = ""; object configured;
+        bool light = string.Equals(theme, "Light", StringComparison.OrdinalIgnoreCase); string key = light ? "__rts_headerLightImage" : "__rts_headerDarkImage"; string headerImage = ""; object configured;
         if (_defaults.TryGetValue(key, out configured) && configured != null) headerImage = Convert.ToString(configured, CultureInfo.InvariantCulture);
-        try { string resolved = light ? DuhBuhUIBannerAssets.LightUri : DuhBuhUIBannerAssets.DarkUri; if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved; } catch (Exception ex) { _logInfo("[duhBuhUI] Banner resolver failed: " + ex.Message); }
-        _logInfo("[duhBuhUI] Header image key=" + key + " value=" + headerImage); StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
-        if (!string.IsNullOrWhiteSpace(headerImage)) { try { BitmapImage bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit(); Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) }; panel.Children.Add(image); _logInfo("[duhBuhUI] RTS settings banner loaded: " + headerImage); } catch (Exception ex) { _logInfo("[duhBuhUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message); panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) }); } }
+        try { string resolved = light ? RtsUIBannerAssets.LightUri : RtsUIBannerAssets.DarkUri; if (!string.IsNullOrWhiteSpace(resolved)) headerImage = resolved; } catch (Exception ex) { _logInfo("[RtsUI] Banner resolver failed: " + ex.Message); }
+        _logInfo("[RtsUI] Header image key=" + key + " value=" + headerImage); StackPanel panel = new StackPanel { Margin = new Thickness(8, 8, 8, 4) };
+        if (!string.IsNullOrWhiteSpace(headerImage)) { try { BitmapImage bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.UriSource = new Uri(headerImage, UriKind.Absolute); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.DecodePixelWidth = 720; bitmap.EndInit(); Image image = new Image { Source = bitmap, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 720, MaxHeight = 180, Margin = new Thickness(0, 0, 0, 6) }; panel.Children.Add(image); _logInfo("[RtsUI] RTS settings banner loaded: " + headerImage); } catch (Exception ex) { _logInfo("[RtsUI] Unable to load RTS settings banner: " + headerImage + " | " + ex.Message); panel.Children.Add(new TextBlock { Text = "The Road to Somewhere", FontSize = 26, FontWeight = FontWeights.Bold, Foreground = ThemeBrush(theme, "AccentText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(16, 14, 16, 8) }); } }
         panel.Children.Add(new TextBlock { Text = _extensionName + "  •  v" + _extensionVersion, FontSize = 12, Foreground = ThemeBrush(theme, "SecondaryText"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 6) }); return panel;
     }
 
@@ -91,8 +91,8 @@ public sealed class DuhBuhUI
             ControlDefinition d = elements[e] as ControlDefinition;
             if (d != null)
             {
-                if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }; DuhBuhUICheckBoxStyler.Apply(toggle); box.Children.Insert(0, toggle); panel.Children.Add(box); }
-                else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; DuhBuhUICustomSlider slider = new DuhBuhUICustomSlider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, Tag = d.Key, Margin = new Thickness(3, 5, 3, 5) }; slider.ValueChanged += delegate { label.Text = d.Title + ": " + ((int)Math.Round(slider.Value)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
+                if (d.Type == "toggle") { StackPanel box = FieldBox(theme, d.Description); CheckBox toggle = new CheckBox { Content = d.Title, IsChecked = Read(d.Key, (bool)d.DefaultValue), FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText"), Margin = new Thickness(0, 5, 0, 2), Tag = d.Key }; RtsUICheckBoxStyler.Apply(toggle); box.Children.Insert(0, toggle); panel.Children.Add(box); }
+                else if (d.Type == "slider") { StackPanel box = FieldBox(theme, d.Description); int value = Read(d.Key, (int)d.DefaultValue); TextBlock label = new TextBlock { Text = d.Title + ": " + value, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }; RtsUICustomSlider slider = new RtsUICustomSlider { Minimum = d.Minimum, Maximum = d.Maximum, Value = Math.Max(d.Minimum, Math.Min(d.Maximum, value)), TickFrequency = 1, Tag = d.Key, Margin = new Thickness(3, 5, 3, 5) }; slider.ValueChanged += delegate { label.Text = d.Title + ": " + ((int)Math.Round(slider.Value)); }; box.Children.Insert(0, label); box.Children.Insert(1, slider); panel.Children.Add(box); }
                 else if (d.Type == "textbox") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); box.Children.Insert(1, new TextBox { Text = Read(d.Key, (string)d.DefaultValue), AcceptsReturn = d.Multiline, TextWrapping = TextWrapping.Wrap, MinHeight = d.Multiline ? 65 : 30, Tag = d.Key }); panel.Children.Add(box); }
                 else if (d.Type == "dropdown") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); ComboBox combo = new ComboBox { Tag = d.Key, MinWidth = 180, Margin = new Thickness(0, 4, 0, 0) }; for (int j = 0; j < d.Options.Length; j++) combo.Items.Add(d.Options[j]); string current = Read(d.Key, (string)d.DefaultValue); combo.SelectedItem = current; if (combo.SelectedIndex < 0 && combo.Items.Count > 0) combo.SelectedIndex = 0; box.Children.Insert(1, combo); panel.Children.Add(box); }
                 else if (d.Type == "radio") { StackPanel box = FieldBox(theme, d.Description); box.Children.Insert(0, new TextBlock { Text = d.Title, FontSize = 14, Foreground = ThemeBrush(theme, "PrimaryText") }); string current = Read(d.Key, (string)d.DefaultValue); if (d.Key == "duhbuh_overlay_lurks_position" && d.Options.Length == 9) { Grid group = new Grid { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int r = 0; r < 3; r++) { group.RowDefinitions.Add(new RowDefinition()); group.ColumnDefinitions.Add(new ColumnDefinition()); } for (int j = 0; j < d.Options.Length; j++) { RadioButton radio = new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(4, 3, 12, 3), HorizontalAlignment = HorizontalAlignment.Left }; Grid.SetRow(radio, j / 3); Grid.SetColumn(radio, j % 3); group.Children.Add(radio); } box.Children.Insert(1, group); } else { StackPanel group = new StackPanel { Margin = new Thickness(0, 5, 0, 0), Tag = d.Key }; for (int j = 0; j < d.Options.Length; j++) group.Children.Add(new RadioButton { Content = d.Options[j], IsChecked = string.Equals(current, d.Options[j], StringComparison.Ordinal), GroupName = d.Key, Margin = new Thickness(0, 2, 0, 2) }); box.Children.Insert(1, group); } panel.Children.Add(box); }
@@ -137,8 +137,8 @@ public sealed class DuhBuhUI
 
     private void Save(DockPanel root)
     {
-        foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__duhbuh_", StringComparison.Ordinal)) continue; SaveTagged(root, item.Key); }
-        _logInfo("[duhBuhUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + ".");
+        foreach (KeyValuePair<string, object> item in _defaults) { if (item.Key.StartsWith("__rts_", StringComparison.Ordinal)) continue; SaveTagged(root, item.Key); }
+        _logInfo("[RtsUI] Saved " + _defaults.Count + " settings for " + _extensionName + " v" + _extensionVersion + ".");
     }
     private void SaveTagged(DependencyObject parent, string key)
     {
@@ -147,7 +147,7 @@ public sealed class DuhBuhUI
             DependencyObject dep = childObject as DependencyObject; if (dep == null) continue; FrameworkElement fe = dep as FrameworkElement;
             if (fe != null && Equals(fe.Tag, key))
             {
-                DuhBuhUICustomSlider customSlider = fe as DuhBuhUICustomSlider; if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
+                RtsUICustomSlider customSlider = fe as RtsUICustomSlider; if (customSlider != null) _setGlobal(key, (int)Math.Round(customSlider.Value), true);
                 CheckBox cb = fe as CheckBox; if (cb != null) _setGlobal(key, cb.IsChecked == true, true);
                 Slider sl = fe as Slider; if (sl != null) _setGlobal(key, (int)Math.Round(sl.Value), true);
                 TextBox tb = fe as TextBox; if (tb != null) _setGlobal(key, tb.Text, true);

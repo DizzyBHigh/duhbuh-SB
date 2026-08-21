@@ -6,7 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// duhBuhUI custom date picker. The field and calendar are owned by this
+// RtsUI custom date picker. The field and calendar are owned by this
 // control. WPF is used only as the rendering/input foundation; no WPF
 // DatePicker control or separate picker Window is used.
 public sealed class DatePicker : Control

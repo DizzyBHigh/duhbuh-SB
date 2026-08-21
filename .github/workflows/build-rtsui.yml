@@ -1,0 +1,31 @@
+name: Build RtsUI
+
+on:
+  push:
+    paths:
+      - 'src/RtsUI/**'
+      - '.github/workflows/build-rtsui.yml'
+  pull_request:
+    paths:
+      - 'src/RtsUI/**'
+      - '.github/workflows/build-rtsui.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build RtsUI
+        run: msbuild src/RtsUI/RtsUI.csproj /restore /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Upload DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: RtsUI
+          path: 'src/RtsUI/bin/Any CPU/Release/net48/RtsUI.dll'
+          if-no-files-found: error

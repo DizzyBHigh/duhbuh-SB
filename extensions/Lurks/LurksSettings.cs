@@ -1,5 +1,5 @@
-// Paste this action into Streamer.bot after adding DuhBuhUI.cs and DuhBuhUIBannerAssets.cs to the same code action.
-// Lurks settings uses the shared duhBuhUI controls and persists overlay profile settings.
+// Paste this action into Streamer.bot after adding RtsUI.cs and RtsUIBannerAssets.cs to the same code action.
+// Lurks settings uses the shared RtsUI controls and persists overlay profile settings.
 
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ public class CPHInline
 
     public bool Execute()
     {
-        var ui = new DuhBuhUI(
+        var ui = new RtsUI(
             extensionName,
             extensionVersion,
             (key, persisted) => CPH.GetGlobalVar<bool?>(key, persisted),
@@ -23,14 +23,14 @@ public class CPHInline
             message => CPH.LogInfo(message)
         );
 
-        string darkBanner = DuhBuhUIBannerAssets.DarkUri;
-        string lightBanner = DuhBuhUIBannerAssets.LightUri;
+        string darkBanner = RtsUIBannerAssets.DarkUri;
+        string lightBanner = RtsUIBannerAssets.LightUri;
         ui.AddHeader(darkBanner, lightBanner);
 
-        CPH.SetGlobalVar("__duhbuh_headerDarkImage", darkBanner, true);
-        CPH.SetGlobalVar("__duhbuh_headerLightImage", lightBanner, true);
+        CPH.SetGlobalVar("__rts_headerDarkImage", darkBanner, true);
+        CPH.SetGlobalVar("__rts_headerLightImage", lightBanner, true);
 
-        ui.AddDropdown("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "duhbuh_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
+        ui.AddDropdown("Appearance", "Choose the settings UI theme. System currently follows the dark palette until OS theme detection is added.", "General", "__rts_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
 
         ui.AddTitle("General Settings", "General");
         ui.AddToggleSwitch("Use 24h format", "Display lurk start times using 24-hour time.", "General", "duhbuh_lurks_24hFormat", true);

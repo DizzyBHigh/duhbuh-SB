@@ -5,7 +5,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 
-public static class DuhBuhUIButtonTheme
+public static class RtsUIButtonTheme
 {
     private static bool _initialized;
 
@@ -13,7 +13,7 @@ public static class DuhBuhUIButtonTheme
     {
         if (_initialized) return;
         _initialized = true;
-        DuhBuhUICheckBoxStyler.Initialize();
+        RtsUICheckBoxStyler.Initialize();
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnWindowLoaded));
     }
 

@@ -1,5 +1,5 @@
-// Standalone Streamer.bot test action for duhBuhUI.dll.
-// Paste this into a temporary C# Execute Code action after placing duhBuhUI.dll in Streamer.bot's dll folder.
+// Standalone Streamer.bot test action for RtsUI.dll.
+// Paste this into a temporary C# Execute Code action after placing RtsUI.dll in Streamer.bot's dll folder.
 
 using System;
 
@@ -7,10 +7,10 @@ public class CPHInline
 {
     public bool Execute()
     {
-        DuhBuhUIButtonTheme.Initialize();
+        RtsUIButtonTheme.Initialize();
 
-        DuhBuhUI ui = new DuhBuhUI(
-            "duhBuhUI Test",
+        RtsUI ui = new RtsUI(
+            "RtsUI Test",
             "0.1.0",
             (key, persisted) => CPH.GetGlobalVar<bool?>(key, persisted),
             (key, persisted) => CPH.GetGlobalVar<int?>(key, persisted),
@@ -29,7 +29,7 @@ public class CPHInline
             "Appearance",
             "Choose the settings UI theme.",
             "General",
-            "duhbuh_ui_theme",
+            "__rts_ui_theme",
             "Dark"
         );
 
@@ -76,7 +76,7 @@ public class CPHInline
             "This verifies the reusable textbox control.",
             "General",
             "test_textbox",
-            "Hello from duhBuhUI",
+            "Hello from RtsUI",
             false
         );
 

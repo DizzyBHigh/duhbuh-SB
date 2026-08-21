@@ -14,7 +14,7 @@ namespace System.Runtime.CompilerServices
 }
 #endif
 
-internal static class DuhBuhUIComboBoxInputFix
+internal static class RtsUIComboBoxInputFix
 {
     [ModuleInitializer]
     internal static void Initialize()

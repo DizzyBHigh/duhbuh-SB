@@ -7,7 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 
-public static class DuhBuhUITheme
+public static class RtsUITheme
 {
     private static bool _initialized;
     private static readonly List<TabControl> _styledTabControls = new List<TabControl>();
@@ -451,13 +451,13 @@ public static class DuhBuhUITheme
 
     private static void ApplyCardsToCategory(StackPanel category, bool light)
     {
-        if (category.Tag is string && (string)category.Tag == "__duhbuh_cards_applied") return;
+        if (category.Tag is string && (string)category.Tag == "__rts_cards_applied") return;
         List<UIElement> original = new List<UIElement>();
         for (int i = 0; i < category.Children.Count; i++) original.Add(category.Children[i]);
         bool hasHeading = false;
         for (int i = 0; i < original.Count; i++) if (IsSectionHeading(original[i] as TextBlock)) { hasHeading = true; break; }
         if (!hasHeading) return;
-        category.Tag = "__duhbuh_cards_applied";
+        category.Tag = "__rts_cards_applied";
         category.Children.Clear();
         StackPanel currentContent = null;
         bool sawFirstHeading = false;

@@ -5,9 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// duhBuhUI custom dropdown. This deliberately does not use WPF ComboBox for
+// RtsUI custom dropdown. This deliberately does not use WPF ComboBox for
 // the visible control or its popup. WPF is only the window/input foundation.
-public sealed class DuhBuhUICustomDropdown : Control
+public sealed class RtsUICustomDropdown : Control
 {
     private string[] _options = new string[0];
     private int _selectedIndex = -1;
@@ -69,7 +69,7 @@ public sealed class DuhBuhUICustomDropdown : Control
         set { SelectedItem = value; }
     }
 
-    public DuhBuhUICustomDropdown()
+    public RtsUICustomDropdown()
     {
         Focusable = true;
         IsTabStop = true;

@@ -4,7 +4,7 @@ This is the first development build. The final release will be distributed as a 
 
 ## Files
 
-- `../../src/duhBuhUI/DuhBuhUI.cs` — reusable settings UI source
+- `../../src/RtsUI/RtsUI.cs` — reusable settings UI source
 - `LurksSettings.cs` — settings action
 - `Lurks.cs` — runtime action
 
@@ -14,7 +14,7 @@ Create a Streamer.bot C# action named:
 
 `duhBuh Lurks - Settings`
 
-Paste `src/duhBuhUI/DuhBuhUI.cs` and `LurksSettings.cs` into the same C# action. Execute it once to open the settings window.
+Paste `src/RtsUI/RtsUI.cs` and `LurksSettings.cs` into the same C# action. Execute it once to open the settings window.
 
 The settings are persisted as Streamer.bot global variables using the `duhbuh_lurks_` namespace.
 
