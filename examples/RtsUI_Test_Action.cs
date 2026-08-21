@@ -21,8 +21,8 @@ public class CPHInline
         );
 
         ui.AddHeader(
-            "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png",
-            "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png"
+            "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Dark%20Banner.png",
+            "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Light%20Banner.png"
         );
 
         ui.AddThemeSelector(

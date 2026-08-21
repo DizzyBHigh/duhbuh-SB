@@ -6,8 +6,8 @@ using System.Net;
 
 public static class RtsUIBannerAssets
 {
-    private const string DarkUrl = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
-    private const string LightUrl = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
+    private const string DarkUrl = "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Dark%20Banner.png";
+    private const string LightUrl = "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Light%20Banner.png";
 
     static RtsUIBannerAssets()
     {

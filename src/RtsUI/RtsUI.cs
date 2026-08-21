@@ -25,8 +25,8 @@ public sealed class RtsUI
     private readonly List<string> _categories = new List<string>();
     private readonly Dictionary<string, object> _defaults = new Dictionary<string, object>();
     private int _definitionOrder;
-    private const string DefaultDarkHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
-    private const string DefaultLightHeader = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
+    private const string DefaultDarkHeader = "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Dark%20Banner.png";
+    private const string DefaultLightHeader = "https://raw.githubusercontent.com/DizzyBHigh/RTS-UI-Dll/main/overlays/assets/RTS%20Light%20Banner.png";
     private sealed class ControlDefinition { public string Type; public string Title; public string Description; public string Category; public string Key; public object DefaultValue; public int Minimum; public int Maximum; public bool Multiline; public string[] Options; public int Order; }
     private sealed class TitleDefinition { public string Title; public string Category; public int Order; }
     private sealed class ButtonDefinition { public string Title; public string Description; public string ButtonText; public string Color; public string Category; public Action Callback; public int Order; }
