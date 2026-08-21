@@ -1,21 +1,21 @@
-# duhBuhUI
+# RtsUI
 
 Reusable WPF settings UI library for Streamer.bot C# actions.
 
 ## Build
 
-The project targets .NET Framework 4.8 and WPF. Build `duhBuhUI.csproj` on Windows with Visual Studio/MSBuild.
+The project targets .NET Framework 4.8 and WPF. Build `RtsUI.csproj` on Windows with Visual Studio/MSBuild.
 
-The GitHub Actions workflow builds the library on Windows and publishes `duhBuhUI.dll` as a workflow artifact.
+The GitHub Actions workflow builds the library on Windows and publishes `RtsUI.dll` as a workflow artifact.
 
 ## Runtime model
 
-Streamer.bot actions supply the Streamer.bot persistence/logging callbacks to `DuhBuhUI`. The library owns the settings-window implementation and control styling.
+Streamer.bot actions supply the Streamer.bot persistence/logging callbacks to `RtsUI`. The library owns the settings-window implementation and control styling.
 
 Example:
 
 ```csharp
-var ui = new DuhBuhUI(
+var ui = new RtsUI(
     extensionName,
     extensionVersion,
     (key, persisted) => CPH.GetGlobalVar<bool?>(key, persisted),
@@ -27,7 +27,7 @@ var ui = new DuhBuhUI(
 );
 
 ui.AddHeader(darkBanner, lightBanner);
-ui.AddDropdown("Appearance", "Settings theme.", "General", "duhbuh_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
+ui.AddDropdown("Appearance", "Settings theme.", "General", "__rts_ui_theme", new[] { "Dark", "Light", "System" }, "Dark");
 ui.AddToggleSwitch("Enabled", "Enable the feature.", "General", "enabled", true);
 ui.AddSlider("Duration", "Display duration.", "General", "duration", 1, 60, 5);
 ui.ShowUI();

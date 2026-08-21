@@ -6,8 +6,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// duhBuhUI custom time picker. The picker popup is anchored to the field and
-// uses the reusable duhBuhUI dropdown rather than a WPF ComboBox.
+// RtsUI custom time picker. The picker popup is anchored to the field and
+// uses the reusable RtsUI dropdown rather than a WPF ComboBox.
 public sealed class TimePicker : Control
 {
     private TimeSpan? _selectedTime;
@@ -91,8 +91,8 @@ public sealed class TimePicker : Control
         StackPanel root = new StackPanel { Margin = new Thickness(14) };
         root.Children.Add(new TextBlock { Text = "Choose time", FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = Brush(TextColor()), Margin = new Thickness(0, 0, 0, 12) });
 
-        DuhBuhUICustomDropdown hours = MakeTimeDropdown();
-        DuhBuhUICustomDropdown minutes = MakeTimeDropdown();
+        RtsUICustomDropdown hours = MakeTimeDropdown();
+        RtsUICustomDropdown minutes = MakeTimeDropdown();
         string[] hourOptions = new string[24], minuteOptions = new string[60];
         for (int i = 0; i < 24; i++) hourOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
         for (int i = 0; i < 60; i++) minuteOptions[i] = i.ToString("00", CultureInfo.InvariantCulture);
@@ -129,9 +129,9 @@ public sealed class TimePicker : Control
         _popup.Closed += PopupClosed; _popup.IsOpen = true; InvalidateVisual();
     }
 
-    private DuhBuhUICustomDropdown MakeTimeDropdown()
+    private RtsUICustomDropdown MakeTimeDropdown()
     {
-        DuhBuhUICustomDropdown d = new DuhBuhUICustomDropdown { MinWidth = 120, Height = 32 };
+        RtsUICustomDropdown d = new RtsUICustomDropdown { MinWidth = 120, Height = 32 };
         d.ApplyTheme(_lightTheme); return d;
     }
     private TextBlock MakePickerLabel(string text) { return new TextBlock { Text = text, FontSize = 11, Foreground = Brush(SecondaryColor()), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 5) }; }

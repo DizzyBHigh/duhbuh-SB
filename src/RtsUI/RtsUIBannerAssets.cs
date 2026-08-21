@@ -1,17 +1,17 @@
-// duhBuhUIBannerAssets - branding assets used by the settings UI.
+// RtsUIBannerAssets - branding assets used by the settings UI.
 
 using System;
 using System.IO;
 using System.Net;
 
-public static class DuhBuhUIBannerAssets
+public static class RtsUIBannerAssets
 {
     private const string DarkUrl = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Dark%20Banner.png";
     private const string LightUrl = "https://raw.githubusercontent.com/DizzyBHigh/duhbuh-SB/main/overlays/assets/RTS%20Light%20Banner.png";
 
-    static DuhBuhUIBannerAssets()
+    static RtsUIBannerAssets()
     {
-        DuhBuhUITheme.Initialize();
+        RtsUITheme.Initialize();
     }
 
     public static string DarkUri { get { return GetCachedUri("RTS-Dark-Banner.png", DarkUrl); } }
@@ -22,7 +22,7 @@ public static class DuhBuhUIBannerAssets
         string result = url;
         try
         {
-            string directory = Path.Combine(Path.GetTempPath(), "duhBuhUI", "branding");
+            string directory = Path.Combine(Path.GetTempPath(), "RtsUI", "branding");
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, fileName);
 

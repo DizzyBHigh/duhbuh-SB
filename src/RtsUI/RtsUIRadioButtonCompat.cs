@@ -7,9 +7,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-// Compatibility surface for DuhBuhUI.cs: deliberately NOT the WPF RadioButton.
+// Compatibility surface for RtsUI.cs: deliberately NOT the WPF RadioButton.
 // The existing framework code can keep its simple RadioButton construction syntax,
-// while this type supplies duhBuhUI's own visuals and interaction.
+// while this type supplies RtsUI's own visuals and interaction.
 public sealed class RadioButton : Border
 {
     private bool _isChecked;

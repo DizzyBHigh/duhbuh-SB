@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.Runtime.CompilerServices;
 
-internal static class DuhBuhUIComboBoxItemHighlightFix
+internal static class RtsUIComboBoxItemHighlightFix
 {
     private static readonly SolidColorBrush Gold = CreateBrush(Color.FromRgb(224, 166, 52));
 

@@ -2,24 +2,24 @@ using System;
 using System.Collections;
 using System.Reflection;
 
-// Checkbox registration surface for the reusable duhBuhUI library.
+// Checkbox registration surface for the reusable RtsUI library.
 // Registration is isolated from the proven toggle implementation so the
 // checkbox can be validated without disturbing existing toggle behavior.
-public static class DuhBuhUICheckBoxExtensions
+public static class RtsUICheckBoxExtensions
 {
-    public static void AddCheckBox(this DuhBuhUI ui, string title, string description, string category, string variableName, bool defaultValue)
+    public static void AddCheckBox(this RtsUI ui, string title, string description, string category, string variableName, bool defaultValue)
     {
         if (ui == null) throw new ArgumentNullException("ui");
 
-        DuhBuhUICheckBoxStyler.RegisterCheckboxKey(variableName);
+        RtsUICheckBoxStyler.RegisterCheckboxKey(variableName);
 
-        Type uiType = typeof(DuhBuhUI);
+        Type uiType = typeof(RtsUI);
         FieldInfo defaultsField = uiType.GetField("_defaults", BindingFlags.Instance | BindingFlags.NonPublic);
         FieldInfo controlsField = uiType.GetField("_controls", BindingFlags.Instance | BindingFlags.NonPublic);
         FieldInfo categoriesField = uiType.GetField("_categories", BindingFlags.Instance | BindingFlags.NonPublic);
         FieldInfo orderField = uiType.GetField("_definitionOrder", BindingFlags.Instance | BindingFlags.NonPublic);
         if (defaultsField == null || controlsField == null || categoriesField == null || orderField == null)
-            throw new InvalidOperationException("duhBuhUI registration internals were not found.");
+            throw new InvalidOperationException("RtsUI registration internals were not found.");
 
         IDictionary defaults = (IDictionary)defaultsField.GetValue(ui);
         IList controls = (IList)controlsField.GetValue(ui);

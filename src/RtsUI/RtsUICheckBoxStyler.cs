@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 // Compatibility/registration shim for the custom CheckBox control.
 // Registered keys render as square checkboxes; ordinary toggle keys render as switches.
-public static class DuhBuhUICheckBoxStyler
+public static class RtsUICheckBoxStyler
 {
     private static readonly List<string> _checkboxKeys = new List<string>();
 

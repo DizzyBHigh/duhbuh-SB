@@ -5,10 +5,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-// Custom text-entry control used by duhBuhUI. WPF supplies the window/control
+// Custom text-entry control used by RtsUI. WPF supplies the window/control
 // host; rendering, selection and editing are owned here.
 //
-// The global TextBox name is intentional: existing DuhBuhUI APIs already use
+// The global TextBox name is intentional: existing RtsUI APIs already use
 // TextBox, so this replaces the native control without requiring extension code
 // changes.
 public sealed class TextBox : Control

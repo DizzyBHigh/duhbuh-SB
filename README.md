@@ -1,4 +1,4 @@
-# duhBuh-SB
+# RTS UI
 
 A collection of independent Streamer.bot extensions by DizzyBHigh. duhBuh is intended to provide useful streamer automation without requiring one large all-in-one package.
 

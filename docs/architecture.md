@@ -5,7 +5,7 @@
 ```text
 Streamer.bot C# actions
         |
-        +-- duhBuhUI (settings definitions + WPF presentation)
+        +-- RtsUI (settings definitions + WPF presentation)
         |
         +-- duhBuh.Core (logging, settings conventions, HTTP/retry helpers)
         |

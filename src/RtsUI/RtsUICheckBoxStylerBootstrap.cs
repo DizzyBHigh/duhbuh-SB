@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
 
-public static class DuhBuhUICheckBoxStylerBootstrap
+public static class RtsUICheckBoxStylerBootstrap
 {
     [ModuleInitializer]
     public static void Initialize()
     {
-        DuhBuhUICheckBoxStyler.Initialize();
+        RtsUICheckBoxStyler.Initialize();
     }
 }

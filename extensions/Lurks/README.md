@@ -1,6 +1,6 @@
 # duhBuh Lurks
 
-First extension target for duhBuh-SB.
+First extension target for RTS UI.
 
 ## Reference behavior
 

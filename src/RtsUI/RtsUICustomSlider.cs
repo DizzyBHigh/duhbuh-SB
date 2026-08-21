@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 
-public sealed class DuhBuhUICustomSlider : FrameworkElement
+public sealed class RtsUICustomSlider : FrameworkElement
 {
     private double _minimum;
     private double _maximum = 100;
@@ -32,7 +32,7 @@ public sealed class DuhBuhUICustomSlider : FrameworkElement
 
     public double TickFrequency { get; set; } = 1;
 
-    public DuhBuhUICustomSlider()
+    public RtsUICustomSlider()
     {
         Height = 30;
         MinHeight = 30;
